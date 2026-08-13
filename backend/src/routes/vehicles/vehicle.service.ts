@@ -1,6 +1,13 @@
-import { eq, and, desc } from "drizzle-orm"
+import { eq, and, desc, sql } from "drizzle-orm"
 import { db } from "../../db"
 import { vehicles, vehiclePositions, type NewVehicle, type NewVehiclePosition } from "../../db/schema"
+
+const positionColumns = {
+  id: vehiclePositions.id,
+  vehicleId: vehiclePositions.vehicleId,
+  location: sql<string>`ST_AsText(${vehiclePositions.location})`.as("location"),
+  recordedAt: vehiclePositions.recordedAt,
+}
 
 export class VehicleService {
   async findAll(filterCooperativeId?: string) {
@@ -54,12 +61,12 @@ export class VehicleService {
 
   // Positions
   async findPositions(vehicleId: string, limit = 50) {
-    return db.select().from(vehiclePositions).where(eq(vehiclePositions.vehicleId, vehicleId)).orderBy(desc(vehiclePositions.recordedAt)).limit(limit)
+    return db.select(positionColumns).from(vehiclePositions).where(eq(vehiclePositions.vehicleId, vehicleId)).orderBy(desc(vehiclePositions.recordedAt)).limit(limit)
   }
 
   async findLatestPosition(vehicleId: string) {
     const [pos] = await db
-      .select()
+      .select(positionColumns)
       .from(vehiclePositions)
       .where(eq(vehiclePositions.vehicleId, vehicleId))
       .orderBy(desc(vehiclePositions.recordedAt))
@@ -68,7 +75,34 @@ export class VehicleService {
   }
 
   async createPosition(vehicleId: string, data: NewVehiclePosition) {
-    const [pos] = await db.insert(vehiclePositions).values({ ...data, vehicleId }).returning()
+    const [pos] = await db.insert(vehiclePositions).values({ ...data, vehicleId }).returning(positionColumns)
     return pos
+  }
+
+  // Tracking: "is this vehicle's route near me, and when will it arrive?"
+  // Delegates to get_eta_following_route() (docker/postgres/initdb/005-maps.sql),
+  // which walks the vehicle's active route_streets sequence rather than
+  // re-running pgRouting on every request.
+  async getEta(vehicleId: string, lat: number, lng: number) {
+    const result = await db.execute<{
+      status: string
+      tempo_segundos: number
+      tempo_texto: string
+      distancia_km: number
+      ruas_restantes: number
+      rua_atual: string | null
+      rua_cidadao: string | null
+    }>(sql`SELECT * FROM get_eta_following_route(${vehicleId}, ${lat}, ${lng})`)
+    const row = result.rows[0]
+    if (!row) return null
+    return {
+      status: row.status,
+      etaSeconds: Number(row.tempo_segundos),
+      etaText: row.tempo_texto,
+      distanceKm: Number(row.distancia_km),
+      streetsRemaining: row.ruas_restantes,
+      currentStreet: row.rua_atual,
+      citizenStreet: row.rua_cidadao,
+    }
   }
 }

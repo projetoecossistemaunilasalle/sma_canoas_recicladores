@@ -1,15 +1,26 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { CooperativeService } from "./cooperative.service"
+import type { JwtPayload } from "../../lib/jwt"
 
 const service = new CooperativeService()
 
 export class CooperativeController {
-  async list(_request: FastifyRequest, reply: FastifyReply) {
-    const coops = await service.findAll()
-    return reply.send(coops)
+  async list(request: FastifyRequest, reply: FastifyReply) {
+    const user = request.user as JwtPayload
+    if (user.role === "admin") {
+      const coops = await service.findAll()
+      return reply.send(coops)
+    }
+    if (!user.cooperativeId) return reply.send([])
+    const coop = await service.findById(user.cooperativeId)
+    return reply.send(coop ? [coop] : [])
   }
 
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const user = request.user as JwtPayload
+    if (user.role !== "admin" && request.params.id !== user.cooperativeId) {
+      return reply.status(404).send({ message: "Cooperative not found" })
+    }
     const coop = await service.findById(request.params.id)
     if (!coop) return reply.status(404).send({ message: "Cooperative not found" })
     return reply.send(coop)

@@ -11,6 +11,8 @@ import { health } from "./routes/health"
 import { cooperativeRoutes } from './routes/cooperatives/cooperative.routes'
 import { userRoutes } from './routes/users/user.routes'
 import { routeRoutes } from './routes/routes/route.routes'
+import { vehicleRoutes } from './routes/vehicles/vehicle.routes'
+import { streetRoutes } from './routes/streets/street.routes'
 
 
 const server = fastify()
@@ -45,7 +47,11 @@ server.register(health)
 server.register(cooperativeRoutes)
 server.register(userRoutes)
 server.register(routeRoutes)
+server.register(vehicleRoutes)
+server.register(streetRoutes)
 
-server.listen({ port: 3333 }).then(() => {
-	console.log("Server is running on http://localhost:3333")
+const port = Number(process.env.PORT) || 3333
+
+server.listen({ port, host: "0.0.0.0" }).then(() => {
+	console.log(`Server is running on http://localhost:${port}`)
 })

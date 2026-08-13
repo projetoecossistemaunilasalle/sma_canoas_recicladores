@@ -1,8 +1,10 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { RouteService } from "./route.service"
+import { StreetService } from "../streets/street.service"
 import type { JwtPayload } from "../../lib/jwt"
 
 const service = new RouteService()
+const streetService = new StreetService()
 
 function getCooperativeFilter(request: FastifyRequest): string | undefined {
   const user = request.user as JwtPayload
@@ -27,7 +29,7 @@ export class RouteController {
     return reply.send(r)
   }
 
-  async create(request: FastifyRequest<{ Body: { vehicleId: string; status?: string; totalDistanceKm?: number; totalDurationSeconds?: number; scheduledDate?: string } }>, reply: FastifyReply) {
+  async create(request: FastifyRequest<{ Body: { vehicleId: string; status?: string; totalDistanceKm?: number; totalDurationSeconds?: number; scheduledDate?: string; daysOfWeek: string[]; shift: string; startTime: string } }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
     let cooperativeId: string | undefined = undefined
 
@@ -65,6 +67,16 @@ export class RouteController {
     return reply.send(streets)
   }
 
+  async listStops(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+    const filter = getCooperativeFilter(request)
+    if (filter) {
+      const route = await service.findById(request.params.id, filter)
+      if (!route) return reply.status(404).send({ message: "Route not found" })
+    }
+    const stops = await service.findStopStreets(request.params.id)
+    return reply.send(stops)
+  }
+
   async addStreet(request: FastifyRequest<{ Params: { id: string }; Body: { streetId: number; stopOrder: number; direction?: string; distanceFromPreviousKm?: number; durationFromPreviousSeconds?: number } }>, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
     if (filter) {
@@ -95,5 +107,36 @@ export class RouteController {
     const rs = await service.removeRouteStreet(request.params.streetId)
     if (!rs) return reply.status(404).send({ message: "Route street not found" })
     return reply.status(204).send()
+  }
+
+  async plan(request: FastifyRequest<{ Params: { id: string }; Body: { streetIds: number[] } }>, reply: FastifyReply) {
+    const filter = getCooperativeFilter(request)
+    if (filter) {
+      const route = await service.findById(request.params.id, filter)
+      if (!route) return reply.status(404).send({ message: "Route not found" })
+    }
+    try {
+      const streets = await service.planRoute(request.params.id, request.body.streetIds)
+      return reply.send(streets)
+    } catch (err) {
+      return reply.status(400).send({ message: err instanceof Error ? err.message : "Could not plan route" })
+    }
+  }
+
+  async preview(request: FastifyRequest<{ Body: { streetIds: number[] } }>, reply: FastifyReply) {
+    try {
+      const segments = await service.computePath(request.body.streetIds)
+      const streetRows = await streetService.findByIds(segments.map((s) => s.streetId))
+      const streetsById = new Map(streetRows.map((s) => [s.id, s]))
+      const result = segments.map((seg) => ({
+        streetId: seg.streetId,
+        isStop: seg.isStop,
+        name: streetsById.get(seg.streetId)?.name ?? null,
+        geom: streetsById.get(seg.streetId)?.geom ?? "",
+      }))
+      return reply.send(result)
+    } catch (err) {
+      return reply.status(400).send({ message: err instanceof Error ? err.message : "Could not preview route" })
+    }
   }
 }

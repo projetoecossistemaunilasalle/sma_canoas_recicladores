@@ -1,5 +1,18 @@
-import { pgTable, uuid, text, boolean, timestamp, integer, doublePrecision, serial, bigint, date } from "drizzle-orm/pg-core"
+import { pgTable, uuid, text, boolean, timestamp, integer, doublePrecision, serial, bigint, date, time, customType } from "drizzle-orm/pg-core"
 import { relations, sql } from "drizzle-orm"
+
+// WKT text in/out (e.g. "POINT(lng lat)"); reads must go through ST_AsText, see vehicle.service.ts
+const geometryPoint = customType<{ data: string }>({
+  dataType() {
+    return "geometry(Point,4326)"
+  },
+})
+
+const geometryLineString = customType<{ data: string }>({
+  dataType() {
+    return "geometry(LineString,4326)"
+  },
+})
 
 // ============================================
 // COOPERATIVES
@@ -53,7 +66,7 @@ export const vehicles = pgTable("vehicles", {
 export const vehiclePositions = pgTable("vehicle_positions", {
   id: uuid("id").primaryKey().defaultRandom(),
   vehicleId: uuid("vehicle_id").references(() => vehicles.id, { onDelete: "cascade" }),
-  location: text("location"), // stored as "POINT(lng lat)" or WKT
+  location: geometryPoint("location").notNull(),
   recordedAt: timestamp("recorded_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
@@ -64,7 +77,7 @@ export const streets = pgTable("streets", {
   id: serial("id").primaryKey(),
   osmId: bigint("osm_id", { mode: "number" }),
   name: text("name"),
-  geom: text("geom"), // WKT LineString
+  geom: geometryLineString("geom").notNull(),
   source: integer("source"),
   target: integer("target"),
   cost: doublePrecision("cost"),
@@ -86,6 +99,10 @@ export const collectionRoutes = pgTable("collection_routes", {
   totalDistanceKm: doublePrecision("total_distance_km"),
   totalDurationSeconds: doublePrecision("total_duration_seconds"),
   scheduledDate: date("scheduled_date"),
+  // Recurring weekly schedule: e.g. daysOfWeek = ["seg","qua"], shift = "manha", startTime = "08:00"
+  daysOfWeek: text("days_of_week").array(),
+  shift: text("shift"), // 'manha' | 'tarde' | 'noite'
+  startTime: time("start_time"),
   startedAt: timestamp("started_at", { withTimezone: true }),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -102,6 +119,10 @@ export const routeStreets = pgTable("route_streets", {
   direction: text("direction").default("forward"), // 'forward' or 'reverse'
   distanceFromPreviousKm: doublePrecision("distance_from_previous_km"),
   durationFromPreviousSeconds: doublePrecision("duration_from_previous_seconds"),
+  // true for the streets the cooperative actually picked as stops; false for
+  // the connector segments pgr_dijkstra filled in between them. Lets the
+  // route-edit UI re-show only what the user originally drew.
+  isStop: boolean("is_stop").notNull().default(false),
 })
 
 // ============================================

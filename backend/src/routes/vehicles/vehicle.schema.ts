@@ -7,8 +7,8 @@ export const vehicleSchema = z.object({
   color: z.string().nullable().optional(),
   cooperativeId: z.string().uuid().nullable().optional(),
   active: z.boolean().default(true),
-  createdAt: z.string().datetime().optional(),
-  updatedAt: z.string().datetime().optional(),
+  createdAt: z.date().optional(),
+  updatedAt: z.date().optional(),
 })
 
 export const createVehicleSchema = z.object({
@@ -25,9 +25,24 @@ export const vehiclePositionSchema = z.object({
   id: z.string().uuid(),
   vehicleId: z.string().uuid(),
   location: z.string(),
-  recordedAt: z.string().datetime(),
+  recordedAt: z.date(),
 })
 
 export const createPositionSchema = z.object({
   location: z.string(),
+})
+
+export const etaQuerySchema = z.object({
+  lat: z.coerce.number(),
+  lng: z.coerce.number(),
+})
+
+export const etaSchema = z.object({
+  status: z.enum(["sem_rota", "na_rua", "passou", "nao_esta_na_rota", "chegando"]),
+  etaSeconds: z.number(),
+  etaText: z.string(),
+  distanceKm: z.number(),
+  streetsRemaining: z.number(),
+  currentStreet: z.string().nullable(),
+  citizenStreet: z.string().nullable(),
 })

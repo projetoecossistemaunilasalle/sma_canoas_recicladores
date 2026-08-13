@@ -1,0 +1,794 @@
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"inverse-primary":"#71dba6","primary-container":"#00875a","background":"#f7f9fb","primary-fixed":"#8df7c1","on-tertiary-container":"#ffffff","surface-container-highest":"#e0e3e5","primary":"#006b47","outline":"#6e7a71","surface-bright":"#f7f9fb","on-primary-container":"#ffffff","secondary-fixed":"#dde1ff","on-primary-fixed":"#002113","secondary":"#3755c3","on-primary":"#ffffff","primary-fixed-dim":"#71dba6","on-secondary-fixed-variant":"#173bab","error-container":"#ffdad6","surface-variant":"#e0e3e5","tertiary":"#785900","outline-variant":"#bdcac0","tertiary-fixed":"#ffdf9f","on-error":"#ffffff","tertiary-container":"#977000","on-secondary-container":"#00217a","on-tertiary-fixed-variant":"#5c4300","surface-tint":"#006c47","tertiary-fixed-dim":"#f9bd22","secondary-container":"#708cfd","on-surface":"#191c1e","on-primary-fixed-variant":"#005235","on-secondary":"#ffffff","surface-container-low":"#f2f4f6","on-tertiary-fixed":"#261a00","on-error-container":"#93000a","on-tertiary":"#ffffff","surface-container-lowest":"#ffffff","on-surface-variant":"#3e4942","error":"#ba1a1a","surface-container":"#eceef0","on-background":"#191c1e","surface-container-high":"#e6e8ea","surface-dim":"#d8dadc","inverse-on-surface":"#eff1f3","secondary-fixed-dim":"#b8c4ff","inverse-surface":"#2d3133","on-secondary-fixed":"#001453","surface":"#f7f9fb"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"lg":"24px","touch-target":"48px","sm":"12px","xl":"32px","xs":"8px","md":"16px","base":"4px","container-margin":"20px"},"fontFamily":{"display-lg":["Atkinson Hyperlegible Next"],"body-lg":["Inter"],"action-lg":["Inter"],"headline-lg-mobile":["Atkinson Hyperlegible Next"],"label-lg":["Inter"],"headline-lg":["Atkinson Hyperlegible Next"],"body-md":["Inter"],"title-lg":["Inter"]},"fontSize":{"display-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"26px","fontWeight":"400"}],"action-lg":["18px",{"lineHeight":"24px","fontWeight":"600"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","fontWeight":"700"}],"label-lg":["14px",{"lineHeight":"20px","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"700"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"title-lg":["20px",{"lineHeight":"28px","fontWeight":"600"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head><body class="bg-background font-body-md text-on-surface"><header class="absolute top-0 w-full z-50 bg-transparent"><div class="h-20 w-full px-container-margin flex items-center justify-between"><div class="flex items-center gap-xs"><span class="material-symbols-outlined text-primary text-[32px]">recycling</span><span class="font-headline-lg text-headline-lg text-primary tracking-tight">Canoas Coleta+</span></div><nav class="flex items-center gap-lg"><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" data-path="help" href="#">Help</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" data-path="about" href="#">About</a></nav></div></header><main class="min-h-screen flex items-center justify-center"><div class="flex flex-col w-full h-[calc(100vh-80px)] md:flex-row relative z-10 -mt-20 pt-20 overflow-hidden">
+<div class="hidden md:flex w-1/2 relative bg-surface-container overflow-hidden group">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105" data-alt="A cinematic, wide-angle shot of a beautifully clean park in Canoas, Brazil at golden hour. Lush green trees, pristine recycling bins subtly visible, warm sunlight filtering through the leaves creating long shadows. Optimistic, high-end, editorial sustainability photography with a palette emphasizing vibrant greens and soft gold." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuD64SO3qRXk8n1FYd4pUdAZCnL8XkRIK3ybod5H196y15abmGpkI7XWiKqL1bL-P0Ulqx7YCinW6vt6tVvxCL3wPVYetlrkvdpfwHvqSdqdyd55OcSLevn66EyzwN9wNQUUI3fjwtKAWIyCG2h0Ii9aL2EWZpwD4ZxbTnNNo36dpwaRS-R2Y3JUgqYU65dE-jGCR50XJ4PTpT8Gt0fc0zmT0u86OmO1MqXgxTu0uWfZYowWxmsLyMYn')">
+</div>
+<div class="absolute inset-0 bg-gradient-to-t from-primary/80 via-primary/30 to-transparent"></div>
+<div class="absolute inset-0 bg-primary/10 mix-blend-multiply"></div>
+<div class="relative z-10 flex flex-col justify-end p-xl h-full w-full max-w-lg mx-auto">
+<div class="mb-lg">
+<span class="material-symbols-outlined text-[64px] text-on-primary mb-sm" style="font-variation-settings: 'FILL' 1;">eco</span>
+<h1 class="font-display-lg text-display-lg text-on-primary mb-sm tracking-tight drop-shadow-md">
+          Transforming Canoas, Together.
+        </h1>
+<p class="font-body-lg text-body-lg text-on-primary/90 max-w-md drop-shadow">
+          Join the community effort for a cleaner city. Real-time collection tracking and seamless recycling management.
+        </p>
+</div>
+<div class="flex items-center gap-sm bg-on-primary/20 backdrop-blur-md rounded-xl p-md border border-on-primary/30 w-fit">
+<div class="flex -space-x-4">
+<img class="w-12 h-12 rounded-full border-2 border-primary object-cover" data-alt="Close up portrait of a smiling young Brazilian woman with natural hair, softly lit, optimistic expression, green background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAKb1GkUEyJXbnJbpo9Q3y9xiVttzV6-C4EHJkz7bHgS8z4HJIX3lytLR6XSVbjGWjPGX-4KpwZCQiO88Ex_fIo_qrsrpNp382iHBWHnWf-DpUO-C3zcpakR4m6Q7XCk2e4RDADRiA4kO6w-ZRpLpPZlqi57t-7tWUeiaz_Fl4UKps0ZYnF-rUuijY9CLzy0WadrPaVbKLesqzGYuwSKiZISnmD_ASwMTI2EenVD4V5-A6eGJT810wj"/>
+<img class="w-12 h-12 rounded-full border-2 border-primary object-cover" data-alt="Portrait of an older Brazilian man, friendly smile, warm lighting, blue shirt" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA4TtQfm1-OuOdsEv0zDlBp7vcuWb3ffRunOp_7uECOgCZAiFLxY_zAe9SFB9Suo72mtvczqVnTnaJ0PDZIN33CawFmphlMxFkg_I6Ogqfx9JZiKA2-2Rcl-MKdXtRFBorkpSb7EC61RrkVjLd3wozrPZrcNKc2z-UuelDQBhy6i9Y-rJi2xKi-ZuqDyKDaqF_j8RanqQux3dYAJ9H_gtGe7IlBpq6zg8rhvHy2YyfCSlfIMcqdGvZk"/>
+<img class="w-12 h-12 rounded-full border-2 border-primary object-cover" data-alt="Portrait of a young Brazilian man, focused and positive, natural daylight" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDrsVQCl6KcVyqhOrr5lDZ2bP6e6veyR7rGXqdLJSN4VjgCULAOrXnM2a3z5WmM0WEyH12E3B0avKnP93MDaKmNu-2M0PFnaAlTN_g_U95Kl1TlOZCHX4pxQucgeSmoBtSOju7n-QMNXQfR2xlAtjlV-D0GK56s7jS76AC5ufcapld91w312xu1i7nX13hiNRjq_3r6gyYpnxcU9ItC5T-N09rE1uDC64RAJupGoCiPg2u3XPJsfFfk"/>
+</div>
+<div class="flex flex-col ml-xs">
+<span class="font-title-lg text-title-lg text-on-primary leading-tight">15,000+</span>
+<span class="font-label-lg text-label-lg text-on-primary/80">Active Citizens</span>
+</div>
+</div>
+</div>
+</div>
+<div class="w-full md:w-1/2 bg-background flex items-center justify-center p-md md:p-xl relative">
+<div class="absolute top-0 right-0 w-64 h-64 bg-primary-fixed rounded-full blur-[100px] opacity-20 -mr-32 -mt-32 pointer-events-none"></div>
+<div class="absolute bottom-0 left-0 w-64 h-64 bg-secondary-fixed rounded-full blur-[100px] opacity-20 -ml-32 -mb-32 pointer-events-none"></div>
+<div class="w-full max-w-md bg-surface rounded-[24px] shadow-xl shadow-surface-variant/50 p-xl relative z-10 overflow-hidden">
+<div class="text-center mb-xl">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-xs">Welcome Back</h2>
+<p class="font-body-md text-body-md text-on-surface-variant">Please sign in to access your dashboard.</p>
+</div>
+<div class="bg-surface-container-low rounded-xl p-1 flex relative mb-xl" id="roleToggle">
+<div class="absolute top-1 bottom-1 left-1 w-[calc(50%-4px)] bg-surface shadow-sm rounded-lg transition-transform duration-300 ease-in-out z-0" id="roleSlider"></div>
+<button class="flex-1 py-3 text-center relative z-10 font-label-lg text-label-lg text-on-surface transition-colors rounded-lg flex items-center justify-center gap-2" onclick="setRole('citizen')">
+<span class="material-symbols-outlined text-[20px]">person</span>
+          Cidadão
+        </button>
+<button class="flex-1 py-3 text-center relative z-10 font-label-lg text-label-lg text-on-surface-variant transition-colors rounded-lg flex items-center justify-center gap-2" onclick="setRole('coop')">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+          Cooperativa
+        </button>
+</div>
+<form class="space-y-md" onsubmit="event.preventDefault(); animateLogin();">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 flex items-center pl-md pointer-events-none text-on-surface-variant group-focus-within:text-primary transition-colors">
+<span class="material-symbols-outlined">badge</span>
+</div>
+<input class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-xl pl-12 pr-md py-4 outline-none border-2 border-transparent focus:border-primary transition-all shadow-sm placeholder:text-on-surface-variant/50" id="identifier" placeholder="CPF or Email" required="" type="text"/>
+<label class="absolute -top-2.5 left-md px-1 bg-surface-container-lowest font-label-lg text-[12px] text-on-surface-variant group-focus-within:text-primary transition-colors" for="identifier">CPF / Email</label>
+</div>
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 flex items-center pl-md pointer-events-none text-on-surface-variant group-focus-within:text-primary transition-colors">
+<span class="material-symbols-outlined">lock</span>
+</div>
+<input class="w-full bg-surface-container-lowest text-on-surface font-body-md text-body-md rounded-xl pl-12 pr-12 py-4 outline-none border-2 border-transparent focus:border-primary transition-all shadow-sm placeholder:text-on-surface-variant/50" id="password" placeholder="••••••••" required="" type="password"/>
+<label class="absolute -top-2.5 left-md px-1 bg-surface-container-lowest font-label-lg text-[12px] text-on-surface-variant group-focus-within:text-primary transition-colors" for="password">Password</label>
+<button class="absolute inset-y-0 right-0 flex items-center pr-md text-on-surface-variant hover:text-primary transition-colors" onclick="togglePassword()" type="button">
+<span class="material-symbols-outlined" id="visibilityIcon">visibility_off</span>
+</button>
+</div>
+<div class="flex items-center justify-between mt-sm mb-lg">
+<label class="flex items-center gap-2 cursor-pointer group">
+<div class="relative flex items-center justify-center w-5 h-5">
+<input class="peer appearance-none w-5 h-5 bg-surface-container-lowest border-2 border-outline-variant rounded transition-colors checked:bg-primary checked:border-primary" type="checkbox"/>
+<span class="material-symbols-outlined absolute text-[16px] text-on-primary opacity-0 peer-checked:opacity-100 transition-opacity pointer-events-none font-bold" style="font-variation-settings: 'FILL' 1;">check</span>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant group-hover:text-on-surface transition-colors">Remember me</span>
+</label>
+<a class="font-label-lg text-label-lg text-primary hover:text-primary-container transition-colors" href="#">Forgot Password?</a>
+</div>
+<button class="w-full h-14 bg-primary text-on-primary font-action-lg text-action-lg rounded-xl shadow-md shadow-primary/20 hover:bg-primary-container hover:shadow-lg hover:-translate-y-0.5 transition-all flex items-center justify-center gap-2 relative overflow-hidden group" id="loginBtn" type="submit">
+<span class="absolute inset-0 w-full h-full bg-white/20 -translate-x-full group-hover:animate-[shimmer_1.5s_infinite]"></span>
+<span class="relative z-10 flex items-center gap-2" id="btnText">
+            Sign In
+            <span class="material-symbols-outlined text-[20px] transition-transform group-hover:translate-x-1">arrow_forward</span>
+</span>
+<span class="material-symbols-outlined animate-spin hidden absolute" id="btnLoader">autorenew</span>
+</button>
+</form>
+<div class="mt-xl text-center">
+<p class="font-body-md text-body-md text-on-surface-variant">
+          New to Coleta+? 
+          <a class="font-label-lg text-label-lg text-primary hover:text-primary-container transition-colors ml-1 relative after:content-[''] after:absolute after:-bottom-1 after:left-0 after:w-full after:h-[2px] after:bg-primary after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:origin-left" href="#">Create an account</a>
+</p>
+</div>
+</div>
+</div>
+</div>
+<style>
+  @keyframes shimmer {
+    100% { transform: translateX(100%); }
+  }
+</style>
+<script>
+  function setRole(role) {
+    const slider = document.getElementById('roleSlider');
+    const buttons = document.querySelectorAll('#roleToggle button');
+    
+    if (role === 'citizen') {
+      slider.style.transform = 'translateX(0)';
+      buttons[0].classList.replace('text-on-surface-variant', 'text-on-surface');
+      buttons[1].classList.replace('text-on-surface', 'text-on-surface-variant');
+    } else {
+      slider.style.transform = 'translateX(100%)';
+      buttons[1].classList.replace('text-on-surface-variant', 'text-on-surface');
+      buttons[0].classList.replace('text-on-surface', 'text-on-surface-variant');
+    }
+  }
+
+  function togglePassword() {
+    const input = document.getElementById('password');
+    const icon = document.getElementById('visibilityIcon');
+    
+    if (input.type === 'password') {
+      input.type = 'text';
+      icon.textContent = 'visibility';
+    } else {
+      input.type = 'password';
+      icon.textContent = 'visibility_off';
+    }
+  }
+
+  function animateLogin() {
+    const btn = document.getElementById('loginBtn');
+    const text = document.getElementById('btnText');
+    const loader = document.getElementById('btnLoader');
+    
+    text.classList.add('opacity-0');
+    setTimeout(() => {
+      text.classList.add('hidden');
+      loader.classList.remove('hidden');
+      
+      // Simulate API call
+      setTimeout(() => {
+        loader.classList.add('hidden');
+        text.classList.remove('hidden');
+        setTimeout(() => text.classList.remove('opacity-0'), 50);
+        
+        // Success animation
+        btn.classList.replace('bg-primary', 'bg-inverse-primary');
+        btn.classList.replace('text-on-primary', 'text-on-primary-container');
+        text.innerHTML = 'Success <span class="material-symbols-outlined text-[20px]">check_circle</span>';
+      }, 1500);
+    }, 150);
+  }
+</script></main></body></html>
+
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"inverse-primary":"#71dba6","primary-container":"#00875a","background":"#f7f9fb","primary-fixed":"#8df7c1","on-tertiary-container":"#ffffff","surface-container-highest":"#e0e3e5","primary":"#006b47","outline":"#6e7a71","surface-bright":"#f7f9fb","on-primary-container":"#ffffff","secondary-fixed":"#dde1ff","on-primary-fixed":"#002113","secondary":"#3755c3","on-primary":"#ffffff","primary-fixed-dim":"#71dba6","on-secondary-fixed-variant":"#173bab","error-container":"#ffdad6","surface-variant":"#e0e3e5","tertiary":"#785900","outline-variant":"#bdcac0","tertiary-fixed":"#ffdf9f","on-error":"#ffffff","tertiary-container":"#977000","on-secondary-container":"#00217a","on-tertiary-fixed-variant":"#5c4300","surface-tint":"#006c47","tertiary-fixed-dim":"#f9bd22","secondary-container":"#708cfd","on-surface":"#191c1e","on-primary-fixed-variant":"#005235","on-secondary":"#ffffff","surface-container-low":"#f2f4f6","on-tertiary-fixed":"#261a00","on-error-container":"#93000a","on-tertiary":"#ffffff","surface-container-lowest":"#ffffff","on-surface-variant":"#3e4942","error":"#ba1a1a","surface-container":"#eceef0","on-background":"#191c1e","surface-container-high":"#e6e8ea","surface-dim":"#d8dadc","inverse-on-surface":"#eff1f3","secondary-fixed-dim":"#b8c4ff","inverse-surface":"#2d3133","on-secondary-fixed":"#001453","surface":"#f7f9fb"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"lg":"24px","touch-target":"48px","sm":"12px","xl":"32px","xs":"8px","md":"16px","base":"4px","container-margin":"20px"},"fontFamily":{"display-lg":["Atkinson Hyperlegible Next"],"body-lg":["Inter"],"action-lg":["Inter"],"headline-lg-mobile":["Atkinson Hyperlegible Next"],"label-lg":["Inter"],"headline-lg":["Atkinson Hyperlegible Next"],"body-md":["Inter"],"title-lg":["Inter"]},"fontSize":{"display-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"26px","fontWeight":"400"}],"action-lg":["18px",{"lineHeight":"24px","fontWeight":"600"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","fontWeight":"700"}],"label-lg":["14px",{"lineHeight":"20px","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"700"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"title-lg":["20px",{"lineHeight":"28px","fontWeight":"600"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head><body class="bg-background font-body-md text-on-surface"><header class="absolute top-0 w-full z-50 bg-transparent"><div class="h-20 w-full px-container-margin flex items-center justify-between"><div class="flex items-center gap-xs"><span class="material-symbols-outlined text-primary text-[32px]">recycling</span><span class="font-headline-lg text-headline-lg text-primary tracking-tight">Canoas Coleta+</span></div><nav class="flex items-center gap-lg"><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" data-path="help" href="#">Help</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" data-path="about" href="#">About</a></nav></div></header><main class="min-h-screen flex items-center justify-center"><div class="flex flex-col w-full h-full relative overflow-hidden bg-surface">
+<div class="absolute inset-0 w-full h-full opacity-10 pointer-events-none" style="background-image: radial-gradient(circle at 100% 0%, var(--tw-colors-primary-container) 0%, transparent 50%), radial-gradient(circle at 0% 100%, var(--tw-colors-tertiary-container) 0%, transparent 50%);"></div>
+<div class="absolute top-1/4 right-1/4 w-96 h-96 bg-primary-container rounded-full mix-blend-multiply filter blur-3xl opacity-5 animate-pulse"></div>
+<div class="flex-1 w-full max-w-7xl mx-auto px-container-margin py-xl flex flex-col lg:flex-row gap-xl lg:gap-24 relative z-10">
+<div class="flex-1 flex flex-col justify-center min-h-[400px] lg:min-h-0 order-2 lg:order-1 relative rounded-3xl overflow-hidden shadow-2xl">
+<div class="absolute inset-0 bg-cover bg-center w-full h-full transition-transform duration-[10s] hover:scale-105" data-alt="A bright, optimistic scene of a clean, tree-lined street in Canoas, Brazil on a sunny day. A modern recycling bin sits neatly by the curb. The style is 3D stylized, clean, vibrant, highlighting themes of community, sustainability, and environmental stewardship. The color palette heavily features greens (primary-container), whites, and warm sunlight." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCQxxKYit3RqyPrMXpi6vBMdyN4F0RoCnz26m84x67oDNjDdvfTBk3HjaEoaUHJWWafol1Zuj5BlUaBKxXpDQDMbMR6_d4buCNWPK7gP5KNUHxCQ2xB6ZluQ5kMahDqQCoArICMVlM_lm4CxhZPWFPasGb1weEOAGaFaP6M_QSfIFWeHXmEDiMxdq8t1-Xvwz0Qwl3MGLU1NcRthHg-XOZshFbkVolmboKagX04fvat21uq0vI6nbAt')"></div>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent"></div>
+<div class="relative z-10 mt-auto p-xl text-white">
+<h2 class="font-display-lg text-display-lg mb-sm">Junte-se ao Movimento.</h2>
+<p class="font-body-lg text-body-lg opacity-90 max-w-md">Sua participação transforma Canoas. Seja você um cidadão consciente ou membro de uma cooperativa, cada ação conta para um futuro mais sustentável.</p>
+</div>
+</div>
+<div class="flex-[1.2] w-full max-w-xl flex flex-col justify-center order-1 lg:order-2 bg-surface-container-lowest rounded-3xl p-xl shadow-lg relative z-20">
+<div class="mb-lg text-center lg:text-left">
+<h1 class="font-display-lg text-display-lg text-on-surface mb-xs">Criar Conta</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Comece a fazer a diferença hoje.</p>
+</div>
+<div class="flex p-1 bg-surface-container-low rounded-lg mb-xl relative">
+<div class="absolute top-1 bottom-1 w-[calc(50%-4px)] bg-surface-container-lowest rounded-md shadow-sm transition-transform duration-300 ease-out z-0" id="slider-bg"></div>
+<button class="flex-1 py-3 px-4 font-action-lg text-action-lg text-primary z-10 relative transition-colors duration-200" id="btn-citizen">Cidadão</button>
+<button class="flex-1 py-3 px-4 font-action-lg text-action-lg text-on-surface-variant z-10 relative transition-colors duration-200" id="btn-coop">Cooperativa</button>
+</div>
+<form class="space-y-lg" id="register-form">
+<div class="space-y-md animate-fade-in-up" id="form-citizen">
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="cit-name">Nome Completo</label>
+<input class="w-full bg-surface-container h-14 px-md rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="cit-name" placeholder="Maria da Silva" type="text"/>
+</div>
+<div class="flex flex-col sm:flex-row gap-md">
+<div class="space-y-2 flex-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="cit-cpf">CPF</label>
+<input class="w-full bg-surface-container h-14 px-md rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="cit-cpf" placeholder="000.000.000-00" type="text"/>
+</div>
+<div class="space-y-2 flex-1">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="cit-phone">Telefone</label>
+<input class="w-full bg-surface-container h-14 px-md rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="cit-phone" placeholder="(51) 90000-0000" type="tel"/>
+</div>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="cit-email">E-mail</label>
+<input class="w-full bg-surface-container h-14 px-md rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="cit-email" placeholder="maria@exemplo.com" type="email"/>
+</div>
+<div class="space-y-2 relative">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="cit-cep">CEP (Endereço)</label>
+<div class="relative">
+<input class="w-full bg-surface-container h-14 pl-md pr-12 rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="cit-cep" placeholder="92000-000" type="text"/>
+<span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant">location_on</span>
+</div>
+</div>
+</div>
+<div class="space-y-md hidden animate-fade-in-up" id="form-coop">
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="coop-name">Nome do Representante</label>
+<input class="w-full bg-surface-container h-14 px-md rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="coop-name" placeholder="João Pereira" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="coop-cnpj">CNPJ / ID da Cooperativa</label>
+<input class="w-full bg-surface-container h-14 px-md rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="coop-cnpj" placeholder="00.000.000/0001-00" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="coop-org">Nome da Cooperativa</label>
+<input class="w-full bg-surface-container h-14 px-md rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="coop-org" placeholder="Cooperativa Verde Vida" type="text"/>
+</div>
+<div class="space-y-2">
+<label class="font-label-lg text-label-lg text-on-surface-variant block" for="coop-role">Cargo / Função</label>
+<input class="w-full bg-surface-container h-14 px-md rounded-lg font-body-md text-body-md text-on-surface placeholder:text-on-surface-variant/50 focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" id="coop-role" placeholder="Coordenador de Triagem" type="text"/>
+</div>
+</div>
+<button class="w-full h-14 bg-primary text-on-primary font-action-lg text-action-lg rounded-full hover:bg-primary-container hover:shadow-md transition-all flex items-center justify-center gap-xs mt-xl group" type="submit">
+<span>Criar Minha Conta</span>
+<span class="material-symbols-outlined transition-transform group-hover:translate-x-1">arrow_forward</span>
+</button>
+</form>
+<div class="mt-lg text-center">
+<a class="font-label-lg text-label-lg text-primary hover:text-primary-container transition-colors inline-flex items-center gap-1 group" href="#login">
+          Já tem uma conta? Fazer Login
+          <span class="material-symbols-outlined text-[18px] transition-transform group-hover:translate-x-0.5">login</span>
+</a>
+</div>
+</div>
+</div>
+</div>
+<style>
+  @keyframes fadeInUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .animate-fade-in-up {
+    animation: fadeInUp 0.4s ease-out forwards;
+  }
+</style>
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const btnCitizen = document.getElementById('btn-citizen');
+    const btnCoop = document.getElementById('btn-coop');
+    const formCitizen = document.getElementById('form-citizen');
+    const formCoop = document.getElementById('form-coop');
+    const sliderBg = document.getElementById('slider-bg');
+
+    const toggleForm = (isCitizen) => {
+      if (isCitizen) {
+        sliderBg.style.transform = 'translateX(0)';
+        
+        btnCitizen.classList.replace('text-on-surface-variant', 'text-primary');
+        btnCoop.classList.replace('text-primary', 'text-on-surface-variant');
+        
+        formCitizen.classList.remove('hidden');
+        formCoop.classList.add('hidden');
+      } else {
+        sliderBg.style.transform = 'translateX(100%)';
+        
+        btnCoop.classList.replace('text-on-surface-variant', 'text-primary');
+        btnCitizen.classList.replace('text-primary', 'text-on-surface-variant');
+        
+        formCoop.classList.remove('hidden');
+        formCitizen.classList.add('hidden');
+      }
+    };
+
+    btnCitizen.addEventListener('click', () => toggleForm(true));
+    btnCoop.addEventListener('click', () => toggleForm(false));
+
+    // Simple interaction on form submit
+    const form = document.getElementById('register-form');
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
+      const originalText = btn.innerHTML;
+      btn.innerHTML = '<span class="material-symbols-outlined animate-spin">refresh</span><span>Processando...</span>';
+      btn.style.opacity = '0.8';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+        btn.style.opacity = '1';
+        // Add completion logic here
+      }, 1500);
+    });
+  });
+</script></main></body></html>
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"inverse-primary":"#71dba6","primary-container":"#00875a","background":"#f7f9fb","primary-fixed":"#8df7c1","on-tertiary-container":"#ffffff","surface-container-highest":"#e0e3e5","primary":"#006b47","outline":"#6e7a71","surface-bright":"#f7f9fb","on-primary-container":"#ffffff","secondary-fixed":"#dde1ff","on-primary-fixed":"#002113","secondary":"#3755c3","on-primary":"#ffffff","primary-fixed-dim":"#71dba6","on-secondary-fixed-variant":"#173bab","error-container":"#ffdad6","surface-variant":"#e0e3e5","tertiary":"#785900","outline-variant":"#bdcac0","tertiary-fixed":"#ffdf9f","on-error":"#ffffff","tertiary-container":"#977000","on-secondary-container":"#00217a","on-tertiary-fixed-variant":"#5c4300","surface-tint":"#006c47","tertiary-fixed-dim":"#f9bd22","secondary-container":"#708cfd","on-surface":"#191c1e","on-primary-fixed-variant":"#005235","on-secondary":"#ffffff","surface-container-low":"#f2f4f6","on-tertiary-fixed":"#261a00","on-error-container":"#93000a","on-tertiary":"#ffffff","surface-container-lowest":"#ffffff","on-surface-variant":"#3e4942","error":"#ba1a1a","surface-container":"#eceef0","on-background":"#191c1e","surface-container-high":"#e6e8ea","surface-dim":"#d8dadc","inverse-on-surface":"#eff1f3","secondary-fixed-dim":"#b8c4ff","inverse-surface":"#2d3133","on-secondary-fixed":"#001453","surface":"#f7f9fb"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"lg":"24px","touch-target":"48px","sm":"12px","xl":"32px","xs":"8px","md":"16px","base":"4px","container-margin":"20px"},"fontFamily":{"display-lg":["Atkinson Hyperlegible Next"],"body-lg":["Inter"],"action-lg":["Inter"],"headline-lg-mobile":["Atkinson Hyperlegible Next"],"label-lg":["Inter"],"headline-lg":["Atkinson Hyperlegible Next"],"body-md":["Inter"],"title-lg":["Inter"]},"fontSize":{"display-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"26px","fontWeight":"400"}],"action-lg":["18px",{"lineHeight":"24px","fontWeight":"600"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","fontWeight":"700"}],"label-lg":["14px",{"lineHeight":"20px","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"700"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"title-lg":["20px",{"lineHeight":"28px","fontWeight":"600"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head><body class="bg-background font-body-md text-on-surface"><header class="absolute top-0 w-full z-50 bg-transparent"><div class="h-20 w-full px-container-margin flex items-center justify-between"><div class="flex items-center gap-xs"><span class="material-symbols-outlined text-primary text-[32px]">recycling</span><span class="font-headline-lg text-headline-lg text-primary tracking-tight">Canoas Coleta+</span></div><nav class="flex items-center gap-lg"><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" data-path="help" href="#">Help</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" data-path="about" href="#">About</a></nav></div></header><main class="min-h-screen flex items-center justify-center"><div class="flex flex-col w-full relative h-full bg-background overflow-hidden">
+<!-- Decorative background circles -->
+<div class="absolute top-[-10%] left-[-5%] w-[40%] aspect-square bg-primary-fixed-dim/20 rounded-full blur-3xl -z-10 animate-[pulse_8s_ease-in-out_infinite]"></div>
+<div class="absolute bottom-[-10%] right-[-5%] w-[50%] aspect-square bg-secondary-fixed/30 rounded-full blur-3xl -z-10 animate-[pulse_10s_ease-in-out_infinite_alternate]"></div>
+<div class="max-w-4xl mx-auto w-full px-container-margin py-xl lg:py-[64px] flex flex-col gap-xl">
+<!-- Header Section -->
+<div class="flex flex-col gap-sm">
+<div class="flex items-center gap-xs text-primary">
+<span class="material-symbols-outlined text-[24px]">local_shipping</span>
+<span class="font-label-lg text-label-lg uppercase tracking-wider">Fleet Management</span>
+</div>
+<h1 class="font-display-lg text-display-lg text-on-surface">Register New Vehicle</h1>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">
+        Add a new collection vehicle to the Canoas Coleta+ cooperative fleet. Ensure all details are accurate for optimal route planning.
+      </p>
+</div>
+<!-- Form Section -->
+<form class="grid grid-cols-1 md:grid-cols-12 gap-lg lg:gap-xl" id="vehicleRegistrationForm" onsubmit="event.preventDefault(); handleRegistration();">
+<!-- Left Column: Core Details -->
+<div class="col-span-1 md:col-span-8 flex flex-col gap-lg bg-surface-container-low p-lg rounded-xl shadow-sm relative overflow-hidden transition-all duration-300 hover:shadow-md">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-bl-full -z-10"></div>
+<div class="flex items-center gap-sm pb-md relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[1px] after:bg-surface-variant">
+<span class="material-symbols-outlined text-primary">info</span>
+<h2 class="font-title-lg text-title-lg text-on-surface">Vehicle Identification</h2>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-md">
+<!-- Vehicle Name / ID -->
+<div class="flex flex-col gap-xs group">
+<label class="font-label-lg text-label-lg text-on-surface-variant group-focus-within:text-primary transition-colors" for="vehicleName">Vehicle Name / ID *</label>
+<div class="relative">
+<span class="absolute left-md top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors">badge</span>
+<input class="w-full bg-surface-container-highest font-body-lg text-body-lg text-on-surface rounded-lg pl-[48px] pr-md py-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface transition-all placeholder:text-outline-variant" id="vehicleName" placeholder="e.g. TR-04" required="" type="text"/>
+</div>
+</div>
+<!-- License Plate -->
+<div class="flex flex-col gap-xs group">
+<label class="font-label-lg text-label-lg text-on-surface-variant group-focus-within:text-primary transition-colors" for="licensePlate">License Plate *</label>
+<div class="relative">
+<span class="absolute left-md top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors">pin</span>
+<input class="w-full bg-surface-container-highest font-body-lg text-body-lg text-on-surface rounded-lg pl-[48px] pr-md py-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface transition-all placeholder:text-outline-variant uppercase" id="licensePlate" placeholder="e.g. ABC-1234" required="" type="text"/>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-sm pt-md pb-md relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[1px] after:bg-surface-variant mt-sm">
+<span class="material-symbols-outlined text-primary">category</span>
+<h2 class="font-title-lg text-title-lg text-on-surface">Specifications</h2>
+</div>
+<!-- Vehicle Type Radio Group (Cards) -->
+<div class="flex flex-col gap-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant">Vehicle Type *</label>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-md">
+<label class="cursor-pointer group relative">
+<input checked="" class="peer sr-only" name="vehicleType" required="" type="radio" value="truck"/>
+<div class="flex flex-col items-center justify-center gap-sm p-md rounded-xl bg-surface-container-highest border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary-container peer-checked:text-on-primary-container text-on-surface-variant hover:bg-surface-variant transition-all h-full">
+<span class="material-symbols-outlined text-[32px] transition-transform group-hover:scale-110 peer-checked:text-on-primary-container">local_shipping</span>
+<span class="font-label-lg text-label-lg text-center peer-checked:text-on-primary-container">Large Truck</span>
+</div>
+<div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</label>
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="vehicleType" type="radio" value="small_truck"/>
+<div class="flex flex-col items-center justify-center gap-sm p-md rounded-xl bg-surface-container-highest border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary-container peer-checked:text-on-primary-container text-on-surface-variant hover:bg-surface-variant transition-all h-full">
+<span class="material-symbols-outlined text-[32px] transition-transform group-hover:scale-110 peer-checked:text-on-primary-container">rv_hookup</span>
+<span class="font-label-lg text-label-lg text-center peer-checked:text-on-primary-container">Small Truck</span>
+</div>
+<div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</label>
+<label class="cursor-pointer group relative">
+<input class="peer sr-only" name="vehicleType" type="radio" value="tricycle"/>
+<div class="flex flex-col items-center justify-center gap-sm p-md rounded-xl bg-surface-container-highest border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary-container peer-checked:text-on-primary-container text-on-surface-variant hover:bg-surface-variant transition-all h-full">
+<span class="material-symbols-outlined text-[32px] transition-transform group-hover:scale-110 peer-checked:text-on-primary-container">moped</span>
+<span class="font-label-lg text-label-lg text-center peer-checked:text-on-primary-container">Tricycle</span>
+</div>
+<div class="absolute top-2 right-2 opacity-0 peer-checked:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+</label>
+</div>
+</div>
+<!-- Capacity (Slider + Input combo) -->
+<div class="flex flex-col gap-xs mt-sm group">
+<label class="font-label-lg text-label-lg text-on-surface-variant group-focus-within:text-primary transition-colors" for="capacityInput">Cargo Capacity (Tons) *</label>
+<div class="flex items-center gap-md">
+<div class="relative w-24 shrink-0">
+<input class="w-full bg-surface-container-highest font-body-lg text-body-lg text-on-surface rounded-lg px-md py-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface transition-all text-center" id="capacityInput" max="20" min="0.1" required="" step="0.1" type="number" value="2.5"/>
+</div>
+<div class="flex-grow flex items-center relative">
+<input class="w-full h-2 bg-surface-container-highest rounded-lg appearance-none cursor-pointer accent-primary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 focus:ring-offset-surface-container-low" id="capacitySlider" max="20" min="0.1" oninput="document.getElementById('capacityInput').value = this.value" step="0.1" type="range" value="2.5"/>
+</div>
+<span class="font-body-md text-body-md text-on-surface-variant w-8 shrink-0 text-right">20t</span>
+</div>
+</div>
+</div>
+<!-- Right Column: Driver & Action -->
+<div class="col-span-1 md:col-span-4 flex flex-col gap-lg">
+<!-- Driver Assignment -->
+<div class="bg-surface-container-low p-lg rounded-xl shadow-sm flex flex-col gap-md transition-all duration-300 hover:shadow-md relative overflow-hidden">
+<div class="absolute -top-10 -right-10 w-24 h-24 bg-tertiary-fixed-dim/20 rounded-full blur-xl -z-10"></div>
+<div class="flex items-center gap-sm pb-xs relative after:absolute after:bottom-0 after:left-0 after:w-full after:h-[1px] after:bg-surface-variant">
+<span class="material-symbols-outlined text-tertiary">person</span>
+<h2 class="font-title-lg text-title-lg text-on-surface">Assignment</h2>
+</div>
+<div class="flex flex-col gap-xs group pt-xs">
+<label class="font-label-lg text-label-lg text-on-surface-variant group-focus-within:text-primary transition-colors" for="driverSelect">Responsible Driver *</label>
+<div class="relative">
+<span class="absolute left-md top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant group-focus-within:text-primary transition-colors pointer-events-none">badge</span>
+<select class="w-full bg-surface-container-highest font-body-lg text-body-lg text-on-surface rounded-lg pl-[48px] pr-[40px] py-sm focus:outline-none focus:ring-2 focus:ring-primary focus:bg-surface transition-all appearance-none cursor-pointer" id="driverSelect" required="">
+<option disabled="" selected="" value="">Select a driver...</option>
+<option value="driver1">Carlos Silva</option>
+<option value="driver2">Ana Oliveira</option>
+<option value="driver3">Roberto Santos</option>
+<option value="driver4">Mariana Costa</option>
+<option value="unassigned">-- Leave Unassigned --</option>
+</select>
+<span class="absolute right-md top-1/2 -translate-y-1/2 material-symbols-outlined text-outline-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="bg-surface-container-highest rounded-lg p-sm flex gap-sm mt-xs">
+<span class="material-symbols-outlined text-secondary shrink-0" style="font-variation-settings: 'FILL' 1;">info</span>
+<p class="font-body-md text-body-md text-on-surface-variant text-sm">
+              Drivers must hold a valid Class C license or higher for Large Trucks.
+            </p>
+</div>
+</div>
+<!-- Submission / Actions -->
+<div class="flex flex-col gap-md mt-auto">
+<button class="w-full h-touch-target bg-primary text-on-primary font-action-lg text-action-lg rounded-full shadow-md hover:bg-primary-container hover:shadow-lg focus:outline-none focus:ring-4 focus:ring-primary-fixed transition-all flex items-center justify-center gap-sm active:scale-[0.98]" type="submit">
+<span class="material-symbols-outlined">add_circle</span>
+            Register Vehicle
+          </button>
+<button class="w-full h-touch-target bg-transparent text-primary font-action-lg text-action-lg rounded-full border-2 border-outline-variant hover:bg-surface-container-highest hover:border-primary focus:outline-none focus:ring-4 focus:ring-primary-fixed transition-all flex items-center justify-center gap-sm" type="button">
+            Cancel
+          </button>
+</div>
+</div>
+</form>
+<!-- Success Toast (Hidden by default) -->
+<div class="fixed bottom-lg left-1/2 -translate-x-1/2 bg-inverse-surface text-inverse-on-surface px-lg py-sm rounded-full shadow-xl flex items-center gap-sm opacity-0 translate-y-4 pointer-events-none transition-all duration-300 z-50" id="successToast">
+<span class="material-symbols-outlined text-inverse-primary" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+<span class="font-label-lg text-label-lg">Vehicle registered successfully!</span>
+</div>
+</div>
+</div>
+<script>
+  // Sync input and slider for capacity
+  const capacityInput = document.getElementById('capacityInput');
+  const capacitySlider = document.getElementById('capacitySlider');
+
+  capacityInput.addEventListener('input', function() {
+    let val = parseFloat(this.value);
+    if (val < 0.1) val = 0.1;
+    if (val > 20) val = 20;
+    capacitySlider.value = val;
+  });
+
+  capacitySlider.addEventListener('input', function() {
+    capacityInput.value = this.value;
+  });
+
+  // Handle Form Submission
+  function handleRegistration() {
+    const btn = document.querySelector('button[type="submit"]');
+    const originalText = btn.innerHTML;
+    
+    // Loading state
+    btn.innerHTML = `<span class="material-symbols-outlined animate-spin">sync</span> Registering...`;
+    btn.classList.add('opacity-80', 'pointer-events-none');
+
+    // Simulate API call
+    setTimeout(() => {
+      // Reset button
+      btn.innerHTML = originalText;
+      btn.classList.remove('opacity-80', 'pointer-events-none');
+      
+      // Show toast
+      const toast = document.getElementById('successToast');
+      toast.classList.remove('opacity-0', 'translate-y-4');
+      
+      // Reset form
+      document.getElementById('vehicleRegistrationForm').reset();
+      capacitySlider.value = 2.5; // default
+      
+      // Hide toast after 3s
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-y-4');
+      }, 3000);
+      
+    }, 1200);
+  }
+</script></main></body></html>
+<html lang="pt-BR"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"on-secondary-fixed":"#001453","on-secondary":"#ffffff","surface-container":"#eceef0","on-primary-fixed":"#002113","tertiary":"#785900","error-container":"#ffdad6","surface":"#f7f9fb","tertiary-container":"#977000","inverse-surface":"#2d3133","tertiary-fixed-dim":"#f9bd22","on-tertiary-container":"#ffffff","inverse-on-surface":"#eff1f3","surface-tint":"#006c47","on-background":"#191c1e","background":"#f7f9fb","secondary-fixed-dim":"#b8c4ff","tertiary-fixed":"#ffdf9f","surface-variant":"#e0e3e5","on-tertiary-fixed-variant":"#5c4300","on-surface":"#191c1e","primary-fixed":"#8df7c1","surface-container-lowest":"#ffffff","on-error-container":"#93000a","on-primary":"#ffffff","secondary-container":"#708cfd","on-secondary-fixed-variant":"#173bab","on-error":"#ffffff","inverse-primary":"#71dba6","on-tertiary":"#ffffff","secondary-fixed":"#dde1ff","on-primary-fixed-variant":"#005235","outline-variant":"#bdcac0","primary-container":"#00875a","on-secondary-container":"#00217a","outline":"#6e7a71","on-primary-container":"#ffffff","surface-dim":"#d8dadc","error":"#ba1a1a","on-tertiary-fixed":"#261a00","surface-container-highest":"#e0e3e5","secondary":"#3755c3","primary-fixed-dim":"#71dba6","surface-bright":"#f7f9fb","primary":"#006b47","surface-container-low":"#f2f4f6","surface-container-high":"#e6e8ea","on-surface-variant":"#3e4942"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"touch-target":"48px","md":"16px","base":"4px","container-margin":"20px","lg":"24px","xs":"8px","sm":"12px","xl":"32px"},"fontFamily":{"title-lg":["Inter"],"headline-lg-mobile":["Atkinson Hyperlegible Next"],"action-lg":["Inter"],"display-lg":["Atkinson Hyperlegible Next"],"body-lg":["Inter"],"body-md":["Inter"],"headline-lg":["Atkinson Hyperlegible Next"],"label-lg":["Inter"]},"fontSize":{"title-lg":["20px",{"lineHeight":"28px","fontWeight":"600"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","fontWeight":"700"}],"action-lg":["18px",{"lineHeight":"24px","fontWeight":"600"}],"display-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"26px","fontWeight":"400"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"700"}],"label-lg":["14px",{"lineHeight":"20px","fontWeight":"600"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:ital,wght@0,200..800;1,200..800&amp;family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head><body class="bg-background font-body-md text-on-surface"><aside class="fixed left-0 top-0 h-full w-72 bg-surface-container-lowest z-50 flex flex-col shadow-[1px_0_8px_rgba(0,0,0,0.02)]"><div class="px-xl py-xl flex items-center gap-xs"><span class="material-symbols-outlined text-primary text-[32px]">recycling</span><div class="flex flex-col"><span class="font-headline-lg text-headline-lg text-primary leading-none">Canoas</span><span class="font-label-lg text-label-lg text-secondary tracking-widest uppercase">Coleta+</span></div></div><nav class="flex-1 px-md space-y-base" data-active-classes="bg-secondary-container text-on-secondary-container font-bold"><a aria-current="page" class="flex items-center h-touch-target px-md rounded-xl transition-all group bg-secondary-container text-on-secondary-container font-bold" data-path="dashboard" href="#"><span class="material-symbols-outlined mr-md group-hover:scale-110 transition-transform">dashboard</span><span class="font-action-lg text-label-lg">Dashboard</span></a><a class="flex items-center h-touch-target px-md rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="rotas-de-coleta" href="#"><span class="material-symbols-outlined mr-md group-hover:scale-110 transition-transform">route</span><span class="font-action-lg text-label-lg">Rotas de Coleta</span></a><a class="flex items-center h-touch-target px-md rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="volume-de-residuos" href="#"><span class="material-symbols-outlined mr-md group-hover:scale-110 transition-transform">analytics</span><span class="font-action-lg text-label-lg">Volume de Resíduos</span></a><a class="flex items-center h-touch-target px-md rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="equipe" href="#"><span class="material-symbols-outlined mr-md group-hover:scale-110 transition-transform">group</span><span class="font-action-lg text-label-lg">Equipe</span></a><a class="flex items-center h-touch-target px-md rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all group" data-path="configuracoes" href="#"><span class="material-symbols-outlined mr-md group-hover:scale-110 transition-transform">settings</span><span class="font-action-lg text-label-lg">Configurações</span></a></nav><div class="p-xl border-t border-outline-variant"><div class="flex items-center gap-md"><div class="w-10 h-10 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[20px]">person</span></div><div><p class="font-title-lg text-label-lg text-on-surface">Staff Canoas</p><p class="text-xs text-on-surface-variant">Operador Master</p></div></div></div></aside><div class="pl-72 w-full"><header class="fixed top-0 left-72 right-0 h-20 bg-surface/80 backdrop-blur-xl z-40 px-xl flex items-center justify-between shadow-[0_1px_8px_rgba(0,0,0,0.04)]"><div class="flex-1 max-w-xl"><div class="relative flex items-center"><span class="material-symbols-outlined absolute left-md text-on-surface-variant">search</span><input class="w-full h-12 bg-surface-container rounded-full pl-xl pr-md text-on-surface focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all" placeholder="Pesquisar rotas, materiais ou equipe..." type="text"/></div></div><div class="flex items-center gap-lg"><button class="relative p-base text-on-surface-variant hover:bg-surface-container-high rounded-full transition-colors"><span class="material-symbols-outlined text-[28px]">notifications</span><span class="absolute top-1 right-1 w-2.5 h-2.5 bg-error rounded-full border-2 border-surface"></span></button><div class="h-10 w-[1px] bg-outline-variant mx-base"></div><div class="flex items-center gap-md cursor-pointer hover:bg-surface-container-low p-base rounded-lg transition-colors"><div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center"><span class="material-symbols-outlined text-on-primary text-[18px]">person</span></div><span class="material-symbols-outlined text-on-surface-variant">expand_more</span></div></div></header><main class="pt-20 min-h-screen bg-surface"><div class="flex flex-col w-full px-container-margin py-xl gap-xl">
+<!-- Hero / Header area - No H1 duplicating shell, but providing contextual welcome -->
+<div class="flex flex-col gap-xs mb-md">
+<h2 class="font-display-lg text-display-lg text-on-surface">Visão Geral da Operação</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant max-w-2xl">Acompanhe os indicadores em tempo real das rotas de coleta seletiva em Canoas e o impacto ambiental gerado pela cooperativa.</p>
+</div>
+<!-- Summary Statistics Grid (Bento style) -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md xl:grid-cols-3">
+<!-- Card 1: Total Waste -->
+<!-- Card 2: Active Routes -->
+<!-- Card 3: Household Reach -->
+<div class="bg-surface-container rounded-2xl p-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden group xl:col-span-3">
+<div class="absolute -right-8 -top-8 w-32 h-32 bg-tertiary/10 rounded-full blur-2xl group-hover:bg-tertiary/20 transition-colors"></div>
+<div class="flex items-start justify-between relative z-10">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-on-surface-variant uppercase tracking-wider mb-base">Cobertura (Canoas)</span>
+<span class="font-display-lg text-[40px] leading-[48px] font-bold text-on-surface">82<span class="text-title-lg text-on-surface-variant font-normal">%</span></span>
+</div>
+<div class="w-12 h-12 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">holiday_village</span>
+</div>
+</div>
+<div class="mt-lg flex items-center gap-xs relative z-10">
+<span class="material-symbols-outlined text-tertiary text-[16px]">check_circle</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Meta: 90% até 2025</span>
+</div>
+</div>
+<!-- Card 4: CO2 Saved -->
+<div class="bg-primary text-on-primary rounded-2xl p-lg flex flex-col justify-between shadow-sm hover:shadow-md transition-shadow relative overflow-hidden">
+<!-- Decorative background pattern -->
+<svg class="absolute inset-0 w-full h-full opacity-10" preserveaspectratio="none" viewbox="0 0 100 100">
+<path d="M0,100 C20,80 40,90 60,60 C80,30 100,50 100,0 L100,100 Z" fill="currentColor"></path>
+</svg>
+<div class="flex items-start justify-between relative z-10">
+<div class="flex flex-col">
+<span class="font-label-lg text-label-lg text-primary-fixed uppercase tracking-wider mb-base">CO₂ Evitado</span>
+<span class="font-display-lg text-[40px] leading-[48px] font-bold">4.8K <span class="text-title-lg font-normal opacity-80">ton</span></span>
+</div>
+<div class="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">co2</span>
+</div>
+</div>
+<div class="mt-lg flex items-center gap-xs relative z-10">
+<span class="material-symbols-outlined text-[16px]">forest</span>
+<span class="font-label-lg text-label-lg">Equivalente a 12.000 árvores</span>
+</div>
+</div>
+</div>
+<!-- Main Content Split: Charts & Map -->
+<div class="grid grid-cols-1 xl:grid-cols-3 gap-md">
+<!-- Left Column: Chart (Spans 2 columns on large screens) -->
+<!-- Right Column: Map & Active Routes List -->
+<div class="bg-surface-container rounded-2xl p-lg flex flex-col shadow-sm xl:col-span-3">
+<div class="flex items-center justify-between mb-md"><h3 class="font-title-lg text-title-lg text-on-surface">Monitoramento de Frota</h3><button class="flex items-center gap-xs px-md py-xs bg-primary text-on-primary rounded-lg font-action-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm"><span class="material-symbols-outlined text-[20px]">add_circle</span>Adicionar Veículo</button></div><button class="mb-md flex items-center justify-center gap-xs px-md py-sm bg-primary text-on-primary rounded-lg font-action-lg text-label-lg hover:bg-primary-container transition-colors shadow-sm w-fit"><span class="material-symbols-outlined text-[20px]">add_circle</span>Adicionar Veículo</button>
+<!-- Map Container -->
+<div class="w-full h-48 rounded-xl overflow-hidden relative mb-md group">
+<div class="w-full h-full bg-cover bg-center" data-location="Canoas, Rio Grande do Sul, Brazil" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCDCKQMtR5gfRSDYPA5Rwv3IGJjm6JvfhERKASqN3Bj-g4Xw8ukK_qF0juzj0rc_6_moEB2jq4u3tIBxJ7GTYPw3jg5Q5wu7zCWxCytXeXDYhPlFCh1bySkSxPnZRiLhyEZGF2wutKb8ip6a0vZcmPyhpwqYUGyDV64zX_1BEHyW7gHbyxjGvPlSkMLcTEcTyD1-IiO1qy8zStZlZpc859UmRKApSkXVdUjQkw9Zx0FZc2ZvZAo1drn')"></div>
+<!-- Simulated map markers overlay -->
+<div class="absolute inset-0 pointer-events-none">
+<div class="absolute top-[30%] left-[40%] w-3 h-3 bg-primary rounded-full ring-4 ring-primary/30 animate-pulse"></div>
+<div class="absolute top-[60%] left-[70%] w-3 h-3 bg-secondary rounded-full ring-4 ring-secondary/30"></div>
+<div class="absolute top-[45%] left-[20%] w-3 h-3 bg-tertiary rounded-full ring-4 ring-tertiary/30"></div>
+</div>
+<button class="absolute bottom-xs right-xs bg-surface p-xs rounded-lg shadow text-on-surface opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">fullscreen</span>
+</button>
+</div>
+<!-- Route List -->
+<div class="flex flex-col gap-sm overflow-y-auto max-h-[250px] pr-xs" style="scrollbar-width: thin;">
+<!-- Route Item -->
+<div class="bg-surface p-sm rounded-xl flex items-center gap-md cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Caminhão 04 - Rota Mathias Velho</p>
+<p class="font-body-md text-xs text-on-surface-variant truncate">Motorista: Carlos S. • 85% Concluído</p>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-label-lg text-[10px] uppercase text-primary px-2 py-0.5 bg-primary/10 rounded-full">Coletando</span>
+</div>
+</div>
+<!-- Route Item -->
+<div class="bg-surface p-sm rounded-xl flex items-center gap-md cursor-pointer hover:bg-surface-container-high transition-colors">
+<div class="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">local_shipping</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Caminhão 02 - Rota Guajuviras</p>
+<p class="font-body-md text-xs text-on-surface-variant truncate">Motorista: Ana T. • Em trânsito</p>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-label-lg text-[10px] uppercase text-secondary px-2 py-0.5 bg-secondary/10 rounded-full">Trânsito</span>
+</div>
+</div>
+<!-- Route Item -->
+<div class="bg-surface p-sm rounded-xl flex items-center gap-md cursor-pointer hover:bg-surface-container-high transition-colors opacity-75">
+<div class="w-10 h-10 rounded-full bg-surface-variant text-on-surface-variant flex items-center justify-center shrink-0">
+<span class="material-symbols-outlined text-[20px]">home_work</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-label-lg text-label-lg text-on-surface truncate">Caminhão 07 - Rota Centro</p>
+<p class="font-body-md text-xs text-on-surface-variant truncate">Retornando para cooperativa</p>
+</div>
+<div class="flex flex-col items-end shrink-0">
+<span class="font-label-lg text-[10px] uppercase text-on-surface-variant px-2 py-0.5 bg-surface-variant rounded-full">Retornando</span>
+</div>
+</div>
+</div>
+<button class="mt-md w-full py-sm rounded-lg border border-outline-variant text-primary font-action-lg text-label-lg hover:bg-primary/5 transition-colors">Ver todas as rotas</button>
+</div>
+</div>
+<!-- Bottom Section Split: Activity Feed & Impact -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-md xl:grid-cols-3">
+<!-- Activity Feed -->
+<!-- Environmental Impact -->
+<div class="bg-surface-container rounded-2xl overflow-hidden shadow-sm relative flex flex-col xl:col-span-3">
+<!-- Photographic background for impact section -->
+<div class="absolute inset-0 w-full h-full bg-cover bg-center mix-blend-overlay opacity-20" data-alt="A bright, optimistic, wide-angle photo of a clean, tree-lined street in a modern Brazilian neighborhood during a sunny morning. The light is soft and golden, highlighting the vibrant green foliage and clean sidewalks. High quality, professional photography, environmental focus." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDJ8pEO-nmWJ_kI_YoRPzKm2sSkNiTZ4VAgHP2_jVKFlDixepA80-lDqH6F6x_s7M4jVqOnWYnew65YMJoVXEYjXkzKjz1GWRG1IfhcKVYoheVej4VSCsmPRnSFXj1lPZJV7HnNCQbWY1f-hpPV4D6kK3d3LCLmaA_MuXwm5h37nq6Mk53PiJWo44Z2xOCxA6lWIktg7OVEKv04DGTrwxjnJM386hj1DYo-wPnHBML4sb42M7YiDK6K')"></div>
+<div class="relative z-10 p-lg flex flex-col h-full bg-gradient-to-t from-surface-container via-surface-container/90 to-transparent">
+<h3 class="font-title-lg text-title-lg text-on-surface mb-md">Impacto Acumulado (2024)</h3>
+<p class="font-body-md text-body-md text-on-surface-variant mb-xl">O trabalho da cooperativa transforma resíduos em recursos, preservando a natureza de Canoas.</p>
+<div class="grid grid-cols-2 gap-sm mt-auto">
+<div class="bg-surface/80 backdrop-blur-md p-md rounded-xl flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-tertiary-container text-[32px] mb-xs">water_drop</span>
+<span class="font-display-lg text-[24px] font-bold text-on-surface">15M <span class="text-xs font-normal">Litros</span></span>
+<span class="font-label-lg text-xs text-on-surface-variant uppercase">Água Poupada</span>
+</div>
+<div class="bg-surface/80 backdrop-blur-md p-md rounded-xl flex flex-col items-center text-center">
+<span class="material-symbols-outlined text-primary text-[32px] mb-xs">bolt</span>
+<span class="font-display-lg text-[24px] font-bold text-on-surface">450 <span class="text-xs font-normal">MWh</span></span>
+<span class="font-label-lg text-xs text-on-surface-variant uppercase">Energia Economizada</span>
+</div>
+<div class="col-span-2 bg-primary text-on-primary p-md rounded-xl flex items-center justify-between shadow-md">
+<div class="flex items-center gap-md">
+<span class="material-symbols-outlined text-[28px]">volunteer_activism</span>
+<div>
+<p class="font-label-lg text-label-lg">Famílias Beneficiadas</p>
+<p class="font-body-md text-xs opacity-80">Renda gerada diretamente</p>
+</div>
+</div>
+<span class="font-display-lg text-[32px] font-bold">142</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div></main></div></body></html>
+<html lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1.0" name="viewport"/><style>@layer base{html,body{margin:0;padding:0;}body{overscroll-behavior:none;}main>:first-child{margin-top:0!important;}main>:last-child{margin-bottom:0!important;}}::-webkit-scrollbar{display:none;}</style><script src="https://cdn.tailwindcss.com"></script><script id="tailwind-config">tailwind.config={theme:{extend:{"colors":{"inverse-primary":"#71dba6","primary-container":"#00875a","background":"#f7f9fb","primary-fixed":"#8df7c1","on-tertiary-container":"#ffffff","surface-container-highest":"#e0e3e5","primary":"#006b47","outline":"#6e7a71","surface-bright":"#f7f9fb","on-primary-container":"#ffffff","secondary-fixed":"#dde1ff","on-primary-fixed":"#002113","secondary":"#3755c3","on-primary":"#ffffff","primary-fixed-dim":"#71dba6","on-secondary-fixed-variant":"#173bab","error-container":"#ffdad6","surface-variant":"#e0e3e5","tertiary":"#785900","outline-variant":"#bdcac0","tertiary-fixed":"#ffdf9f","on-error":"#ffffff","tertiary-container":"#977000","on-secondary-container":"#00217a","on-tertiary-fixed-variant":"#5c4300","surface-tint":"#006c47","tertiary-fixed-dim":"#f9bd22","secondary-container":"#708cfd","on-surface":"#191c1e","on-primary-fixed-variant":"#005235","on-secondary":"#ffffff","surface-container-low":"#f2f4f6","on-tertiary-fixed":"#261a00","on-error-container":"#93000a","on-tertiary":"#ffffff","surface-container-lowest":"#ffffff","on-surface-variant":"#3e4942","error":"#ba1a1a","surface-container":"#eceef0","on-background":"#191c1e","surface-container-high":"#e6e8ea","surface-dim":"#d8dadc","inverse-on-surface":"#eff1f3","secondary-fixed-dim":"#b8c4ff","inverse-surface":"#2d3133","on-secondary-fixed":"#001453","surface":"#f7f9fb"},"borderRadius":{"DEFAULT":"0.25rem","lg":"0.5rem","xl":"0.75rem","full":"9999px"},"spacing":{"lg":"24px","touch-target":"48px","sm":"12px","xl":"32px","xs":"8px","md":"16px","base":"4px","container-margin":"20px"},"fontFamily":{"display-lg":["Atkinson Hyperlegible Next"],"body-lg":["Inter"],"action-lg":["Inter"],"headline-lg-mobile":["Atkinson Hyperlegible Next"],"label-lg":["Inter"],"headline-lg":["Atkinson Hyperlegible Next"],"body-md":["Inter"],"title-lg":["Inter"]},"fontSize":{"display-lg":["32px",{"lineHeight":"40px","letterSpacing":"-0.02em","fontWeight":"700"}],"body-lg":["18px",{"lineHeight":"26px","fontWeight":"400"}],"action-lg":["18px",{"lineHeight":"24px","fontWeight":"600"}],"headline-lg-mobile":["22px",{"lineHeight":"28px","fontWeight":"700"}],"label-lg":["14px",{"lineHeight":"20px","fontWeight":"600"}],"headline-lg":["24px",{"lineHeight":"32px","fontWeight":"700"}],"body-md":["16px",{"lineHeight":"24px","fontWeight":"400"}],"title-lg":["20px",{"lineHeight":"28px","fontWeight":"600"}]}}}}</script><link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700&amp;family=Inter:wght@400;600;700&amp;display=swap" rel="stylesheet"/><link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/></head><body class="bg-background font-body-md text-on-surface"><header class="absolute top-0 w-full z-50 bg-transparent"><div class="h-20 w-full px-container-margin flex items-center justify-between"><div class="flex items-center gap-xs"><span class="material-symbols-outlined text-primary text-[32px]">recycling</span><span class="font-headline-lg text-headline-lg text-primary tracking-tight">Canoas Coleta+</span></div><nav class="flex items-center gap-lg"><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" data-path="help" href="#">Help</a><a class="font-label-lg text-label-lg text-on-surface-variant hover:text-primary transition-colors" data-path="about" href="#">About</a></nav></div></header><main class="min-h-screen flex items-center justify-center"><div class="flex flex-col w-full relative">
+<div class="w-full flex flex-col md:flex-row gap-xl p-container-margin md:p-xl max-w-7xl mx-auto">
+<!-- Left Column: Edit Form -->
+<div class="flex-1 flex flex-col gap-lg z-10 relative">
+<div class="bg-surface-container rounded-3xl p-lg md:p-xl shadow-md flex flex-col gap-lg relative overflow-hidden">
+<!-- Decorative blur -->
+<div class="absolute -top-32 -right-32 w-64 h-64 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="flex flex-col gap-sm">
+<h1 class="font-display-lg text-display-lg text-on-surface">Edit Vehicle</h1>
+<p class="font-body-md text-body-md text-on-surface-variant">Update details and status for <span class="font-title-lg text-title-lg text-primary">Caminhão 05</span>.</p>
+</div>
+<form class="flex flex-col gap-xl w-full relative z-10" onsubmit="event.preventDefault();">
+<div class="flex flex-col gap-lg">
+<h2 class="font-title-lg text-title-lg text-on-surface uppercase tracking-wider text-sm">Vehicle Identity</h2>
+<div class="flex flex-col gap-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="vehicle_name">Vehicle Name / ID</label>
+<input class="bg-surface-container-highest text-on-surface font-body-lg text-body-lg p-sm md:p-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-shadow w-full placeholder-on-surface-variant/50" id="vehicle_name" type="text" value="Caminhão 05"/>
+</div>
+<div class="flex flex-col gap-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="plate_number">License Plate</label>
+<input class="bg-surface-container-highest text-on-surface font-body-lg text-body-lg p-sm md:p-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-shadow w-full uppercase placeholder-on-surface-variant/50" id="plate_number" type="text" value="IXY-9283"/>
+</div>
+</div>
+<div class="w-full h-px bg-outline-variant/30 my-sm"></div>
+<div class="flex flex-col gap-lg">
+<h2 class="font-title-lg text-title-lg text-on-surface uppercase tracking-wider text-sm">Assignment &amp; Status</h2>
+<div class="flex flex-col gap-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="status">Current Status</label>
+<div class="relative">
+<select class="appearance-none bg-surface-container-highest text-on-surface font-body-lg text-body-lg p-sm md:p-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-shadow w-full pr-xl" id="status">
+<option value="active">Active</option>
+<option selected="" value="maintenance">In Maintenance</option>
+<option value="inactive">Inactive</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="driver">Assigned Driver</label>
+<div class="relative">
+<select class="appearance-none bg-surface-container-highest text-on-surface font-body-lg text-body-lg p-sm md:p-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-shadow w-full pr-xl" id="driver">
+<option value="unassigned">-- Unassigned --</option>
+<option selected="" value="d1">Roberto Silva</option>
+<option value="d2">Ana Costa</option>
+<option value="d3">Carlos Mendes</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-sm">
+<label class="font-label-lg text-label-lg text-on-surface-variant" for="route">Assigned Route (Default)</label>
+<div class="relative">
+<select class="appearance-none bg-surface-container-highest text-on-surface font-body-lg text-body-lg p-sm md:p-md rounded-lg focus:outline-none focus:ring-2 focus:ring-primary transition-shadow w-full pr-xl" id="route">
+<option value="r0">-- No Default Route --</option>
+<option selected="" value="r1">Route A - Centro / Mathias Velho</option>
+<option value="r2">Route B - Guajuviras / Estância Velha</option>
+<option value="r3">Route C - Niterói / Fátima</option>
+</select>
+<span class="material-symbols-outlined absolute right-sm top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<div class="flex flex-col sm:flex-row gap-md mt-lg items-center justify-between">
+<button class="group flex items-center justify-center gap-xs px-lg h-[56px] bg-error-container text-on-error-container hover:bg-error hover:text-on-error rounded-full font-action-lg text-action-lg transition-all duration-300 shadow-sm hover:shadow-md w-full sm:w-auto" type="button">
+<span class="material-symbols-outlined text-[24px]">delete</span>
+<span>Delete Vehicle</span>
+</button>
+<div class="flex flex-col sm:flex-row gap-md w-full sm:w-auto">
+<button class="flex items-center justify-center px-lg h-[56px] bg-transparent text-primary hover:bg-primary/10 rounded-full font-action-lg text-action-lg transition-colors w-full sm:w-auto" type="button">
+                            Cancel
+                        </button>
+<button class="flex items-center justify-center gap-xs px-lg h-[56px] bg-primary text-on-primary hover:bg-primary/90 rounded-full font-action-lg text-action-lg transition-all duration-300 shadow-md hover:shadow-lg w-full sm:w-auto hover:-translate-y-1" type="submit">
+<span class="material-symbols-outlined text-[24px]">save</span>
+<span>Update Details</span>
+</button>
+</div>
+</div>
+</form>
+</div>
+</div>
+<!-- Right Column: Contextual Info & Visuals -->
+<div class="w-full md:w-96 flex flex-col gap-lg shrink-0">
+<!-- Maintenance Alert Card -->
+<div class="bg-tertiary-container text-on-tertiary-container rounded-3xl p-lg shadow-lg relative overflow-hidden flex flex-col gap-md">
+<div class="absolute -right-8 -bottom-8 opacity-20 pointer-events-none">
+<span class="material-symbols-outlined text-[120px]">build_circle</span>
+</div>
+<div class="flex items-center gap-sm relative z-10">
+<span class="material-symbols-outlined text-tertiary-fixed-dim text-[28px]">warning</span>
+<h3 class="font-headline-lg text-headline-lg">In Maintenance</h3>
+</div>
+<p class="font-body-md text-body-md relative z-10 opacity-90">
+                This vehicle was flagged for maintenance on <strong class="font-title-lg">Oct 12, 2023</strong>. It is currently unavailable for route assignment.
+            </p>
+<div class="mt-sm bg-surface-container-highest/20 rounded-xl p-md relative z-10">
+<span class="font-label-lg text-label-lg uppercase tracking-wider opacity-70 block mb-xs">Last Log Note</span>
+<p class="font-body-sm italic">"Hydraulic system leak in the rear compactor unit. Awaiting parts." - Workshop Sup.</p>
+</div>
+</div>
+<!-- Vehicle Image Context -->
+<div class="relative w-full aspect-square rounded-3xl overflow-hidden shadow-md group">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A modern green and white garbage collection truck parked in a clean, well-lit municipal depot in Canoas, Brazil, with 'Canoas Coleta+' branding clearly visible. Bright sunny day, sharp focus." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDLFnE89OBije2OTVaNkfcEg1ufI8wJKSWgX7IHwivOPAWmWUzv9oG0WC1KVnTA-LffHCZWkhKuG8Rpl0Cz200uQCkvs4id0YFCzrmGtKragsWWCO11BB3TqFtSvu2xZZUnNSNH8S5E_QGRgyNU4tK8FbmHAh6mWgZfFIuzk9wVxIX7JL4hSlyQA9m1UOSjppUV8xmBiO7jMT1qZChyUyGky1TIT2Xi4f-CrfRQ-nKv85cpqTVbba4s')"></div>
+<!-- Scrim -->
+<div class="absolute inset-0 bg-gradient-to-t from-surface-container-highest/90 via-surface-container-highest/20 to-transparent"></div>
+<div class="absolute bottom-0 left-0 w-full p-lg flex flex-col gap-xs text-on-surface">
+<span class="font-label-lg text-label-lg bg-primary/20 backdrop-blur-md text-primary px-sm py-base rounded-full w-fit uppercase tracking-widest text-[10px]">Reference Image</span>
+<h4 class="font-headline-lg text-headline-lg tracking-tight">Caminhão 05</h4>
+<p class="font-body-sm text-on-surface-variant flex items-center gap-xs">
+<span class="material-symbols-outlined text-[16px]">speed</span> 142,050 km
+                </p>
+</div>
+</div>
+<!-- Stats Bento -->
+<div class="grid grid-cols-2 gap-md">
+<div class="bg-surface-container rounded-2xl p-md flex flex-col items-center justify-center text-center gap-xs shadow-sm hover:shadow-md transition-shadow">
+<span class="material-symbols-outlined text-primary text-[32px]">route</span>
+<span class="font-display-lg text-display-lg text-on-surface">1.2k</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Routes Completed</span>
+</div>
+<div class="bg-surface-container rounded-2xl p-md flex flex-col items-center justify-center text-center gap-xs shadow-sm hover:shadow-md transition-shadow">
+<span class="material-symbols-outlined text-secondary text-[32px]">recycling</span>
+<span class="font-display-lg text-display-lg text-on-surface">450t</span>
+<span class="font-label-lg text-label-lg text-on-surface-variant">Waste Collected</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<script>
+    // Simple micro-interaction for the status dropdown to visually reflect urgency
+    document.addEventListener('DOMContentLoaded', () => {
+        const statusSelect = document.getElementById('status');
+        const updateVisuals = () => {
+            const val = statusSelect.value;
+            if (val === 'maintenance') {
+                statusSelect.classList.remove('text-on-surface');
+                statusSelect.classList.add('text-tertiary', 'bg-tertiary-fixed', 'font-action-lg');
+            } else if (val === 'inactive') {
+                statusSelect.classList.remove('text-on-surface', 'text-tertiary', 'bg-tertiary-fixed', 'font-action-lg');
+                statusSelect.classList.add('text-error', 'bg-error-container', 'font-action-lg');
+            } else {
+                 statusSelect.classList.remove('text-tertiary', 'bg-tertiary-fixed', 'text-error', 'bg-error-container', 'font-action-lg');
+                 statusSelect.classList.add('text-on-surface');
+            }
+        };
+        
+        statusSelect.addEventListener('change', updateVisuals);
+        updateVisuals(); // Init
+    });
+</script></main></body></html>

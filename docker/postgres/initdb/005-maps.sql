@@ -25,6 +25,10 @@ CREATE TABLE IF NOT EXISTS collection_routes (
     total_distance_km DOUBLE PRECISION,
     total_duration_seconds DOUBLE PRECISION,
     scheduled_date DATE,
+    -- Recorrência semanal: dias em que a rota roda, turno e horário de início.
+    days_of_week TEXT[],       -- ex: {seg,qua,sex}
+    shift TEXT,                -- 'manha' | 'tarde' | 'noite'
+    start_time TIME,           -- ex: 08:00
     started_at TIMESTAMPTZ,
     completed_at TIMESTAMPTZ,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -40,7 +44,8 @@ CREATE TABLE IF NOT EXISTS route_streets (
     stop_order INTEGER NOT NULL,
     direction TEXT DEFAULT 'forward',  -- 'forward' (0→1) ou 'reverse' (1→0)
     distance_from_previous_km DOUBLE PRECISION,
-    duration_from_previous_seconds DOUBLE PRECISION
+    duration_from_previous_seconds DOUBLE PRECISION,
+    is_stop BOOLEAN NOT NULL DEFAULT false  -- true = rua escolhida pela cooperativa; false = conector preenchido pelo pgr_dijkstra
 );
 
 -- ============================================
@@ -66,11 +71,15 @@ DECLARE
     v_street_name TEXT;
     v_fraction DOUBLE PRECISION;
     v_direction TEXT;
-    
+    v_street_cost DOUBLE PRECISION;
+    v_street_length_km DOUBLE PRECISION;
+
     c_street_id INTEGER;
     c_street_name TEXT;
     c_fraction DOUBLE PRECISION;
-    
+    c_street_cost DOUBLE PRECISION;
+    c_street_length_km DOUBLE PRECISION;
+
     v_stop_order INTEGER;
     c_stop_order INTEGER;
     
@@ -79,12 +88,21 @@ DECLARE
     tempo_rua_cidadao DOUBLE PRECISION;
     dist_total DOUBLE PRECISION;
 BEGIN
-    -- 1. PEGA A ROTA ATIVA DO VEÍCULO
+    -- 1. PEGA A ROTA ATIVA DO VEÍCULO (recorrência semanal: dia da semana + horário de início)
     SELECT cr.id INTO v_route_id
     FROM collection_routes cr
     WHERE cr.vehicle_id = p_vehicle_id
       AND cr.status IN ('active', 'planned')
-      AND cr.scheduled_date = CURRENT_DATE
+      AND cr.days_of_week IS NOT NULL
+      AND (
+        CASE EXTRACT(ISODOW FROM CURRENT_DATE)
+          WHEN 1 THEN 'seg' WHEN 2 THEN 'ter' WHEN 3 THEN 'qua'
+          WHEN 4 THEN 'qui' WHEN 5 THEN 'sex' WHEN 6 THEN 'sab'
+          WHEN 7 THEN 'dom'
+        END = ANY(cr.days_of_week)
+      )
+      AND cr.start_time IS NOT NULL
+      AND LOCALTIME >= cr.start_time
     ORDER BY cr.created_at DESC
     LIMIT 1;
     
@@ -94,11 +112,11 @@ BEGIN
     END IF;
 
     -- 2. POSIÇÃO ATUAL DO CAMINHÃO (GPS mais recente)
-    SELECT 
+    SELECT
         ST_LineLocatePoint(s.geom, vp.location),
         s.id,
         s.name,
-        rs.direction
+        s.direction
     INTO v_fraction, v_street_id, v_street_name, v_direction
     FROM vehicle_positions vp
     CROSS JOIN LATERAL (
@@ -113,8 +131,13 @@ BEGIN
     ORDER BY vp.recorded_at DESC
     LIMIT 1;
 
+    IF v_street_id IS NOT NULL THEN
+        SELECT cost, length_km INTO v_street_cost, v_street_length_km
+        FROM streets WHERE id = v_street_id;
+    END IF;
+
     -- 3. POSIÇÃO DO CIDADÃO
-    SELECT 
+    SELECT
         s.id,
         s.name,
         ST_LineLocatePoint(s.geom, ST_SetSRID(ST_MakePoint(p_citizen_lng, p_citizen_lat), 4326))
@@ -123,27 +146,32 @@ BEGIN
     ORDER BY s.geom <-> ST_SetSRID(ST_MakePoint(p_citizen_lng, p_citizen_lat), 4326)
     LIMIT 1;
 
+    IF c_street_id IS NOT NULL THEN
+        SELECT cost, length_km INTO c_street_cost, c_street_length_km
+        FROM streets WHERE id = c_street_id;
+    END IF;
+
     -- 4. VERIFICA SE O CIDADÃO ESTÁ NA MESMA RUA
     IF v_street_id = c_street_id THEN
         -- Mesma rua: calcula distância entre as frações
         IF v_direction = 'forward' THEN
             -- Caminhão vai de 0→1
             IF c_fraction >= v_fraction THEN
-                tempo_rua_atual := (c_fraction - v_fraction) * s.cost;
-                dist_total := (c_fraction - v_fraction) * s.length_km;
+                tempo_rua_atual := (c_fraction - v_fraction) * v_street_cost;
+                dist_total := (c_fraction - v_fraction) * v_street_length_km;
             ELSE
                 -- Cidadão está "atrás" no sentido da rota (já passou ou vai voltar)
-                tempo_rua_atual := (1 - v_fraction + c_fraction) * s.cost;
-                dist_total := (1 - v_fraction + c_fraction) * s.length_km;
+                tempo_rua_atual := (1 - v_fraction + c_fraction) * v_street_cost;
+                dist_total := (1 - v_fraction + c_fraction) * v_street_length_km;
             END IF;
         ELSE
             -- Caminhão vai de 1→0 (reverse)
             IF c_fraction <= v_fraction THEN
-                tempo_rua_atual := (v_fraction - c_fraction) * s.cost;
-                dist_total := (v_fraction - c_fraction) * s.length_km;
+                tempo_rua_atual := (v_fraction - c_fraction) * v_street_cost;
+                dist_total := (v_fraction - c_fraction) * v_street_length_km;
             ELSE
-                tempo_rua_atual := (v_fraction + (1 - c_fraction)) * s.cost;
-                dist_total := (v_fraction + (1 - c_fraction)) * s.length_km;
+                tempo_rua_atual := (v_fraction + (1 - c_fraction)) * v_street_cost;
+                dist_total := (v_fraction + (1 - c_fraction)) * v_street_length_km;
             END IF;
         END IF;
         
@@ -188,11 +216,11 @@ BEGIN
 
     -- 8. CALCULA TEMPO RESTANTE NA RUA ATUAL
     IF v_direction = 'forward' THEN
-        tempo_rua_atual := (1 - v_fraction) * s.cost;
-        dist_total := (1 - v_fraction) * s.length_km;
+        tempo_rua_atual := (1 - v_fraction) * v_street_cost;
+        dist_total := (1 - v_fraction) * v_street_length_km;
     ELSE
-        tempo_rua_atual := v_fraction * s.cost;
-        dist_total := v_fraction * s.length_km;
+        tempo_rua_atual := v_fraction * v_street_cost;
+        dist_total := v_fraction * v_street_length_km;
     END IF;
 
     -- 9. SOMA AS RUAS INTERMEDIÁRIAS (entre a atual e a do cidadão)
@@ -210,11 +238,11 @@ BEGIN
     WHERE rs.route_id = v_route_id AND rs.street_id = c_street_id;
     
     IF v_direction = 'forward' THEN
-        tempo_rua_cidadao := c_fraction * s.cost;
-        dist_total := dist_total + (c_fraction * s.length_km);
+        tempo_rua_cidadao := c_fraction * c_street_cost;
+        dist_total := dist_total + (c_fraction * c_street_length_km);
     ELSE
-        tempo_rua_cidadao := (1 - c_fraction) * s.cost;
-        dist_total := dist_total + ((1 - c_fraction) * s.length_km);
+        tempo_rua_cidadao := (1 - c_fraction) * c_street_cost;
+        dist_total := dist_total + ((1 - c_fraction) * c_street_length_km);
     END IF;
 
     -- 11. RETORNA

@@ -8,6 +8,8 @@ import {
   routeStreetSchema,
   createRouteStreetSchema,
   updateRouteStreetSchema,
+  routeStopSchema,
+  routePreviewSegmentSchema,
 } from "./route.schema"
 import { authenticate, requireRole } from "../../middleware/auth.middleware"
 
@@ -100,6 +102,20 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
     controller.listStreets.bind(controller)
   )
 
+  server.get(
+    "/routes/:id/stops",
+    {
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      schema: {
+        summary: "List only the streets originally picked as stops (not the auto-filled connectors)",
+        tags: ["Routes"],
+        params: z.object({ id: z.string().uuid() }),
+        response: { 200: z.array(routeStopSchema) },
+      },
+    },
+    controller.listStops.bind(controller)
+  )
+
   server.post(
     "/routes/:id/streets",
     {
@@ -142,5 +158,42 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
       },
     },
     controller.removeStreet.bind(controller)
+  )
+
+  // ==================== ROUTE PLANNING ====================
+  server.post(
+    "/routes/:id/plan",
+    {
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      schema: {
+        summary: "Plan a route: path-find between chosen stop streets and materialize route_streets",
+        tags: ["Routes"],
+        params: z.object({ id: z.string().uuid() }),
+        body: z.object({ streetIds: z.array(z.number().int()).min(1) }),
+        response: {
+          200: z.array(routeStreetSchema),
+          400: z.object({ message: z.string() }),
+          404: z.object({ message: z.string() }),
+        },
+      },
+    },
+    controller.plan.bind(controller)
+  )
+
+  server.post(
+    "/routes/preview",
+    {
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      schema: {
+        summary: "Path-find between chosen stop streets without persisting — for live map preview",
+        tags: ["Routes"],
+        body: z.object({ streetIds: z.array(z.number().int()).min(1) }),
+        response: {
+          200: z.array(routePreviewSegmentSchema),
+          400: z.object({ message: z.string() }),
+        },
+      },
+    },
+    controller.preview.bind(controller)
   )
 }

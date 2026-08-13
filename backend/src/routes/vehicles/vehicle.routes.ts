@@ -1,7 +1,7 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { VehicleController } from "./vehicle.controller"
-import { vehicleSchema, createVehicleSchema, updateVehicleSchema, vehiclePositionSchema, createPositionSchema } from "./vehicle.schema"
+import { vehicleSchema, createVehicleSchema, updateVehicleSchema, vehiclePositionSchema, createPositionSchema, etaQuerySchema, etaSchema } from "./vehicle.schema"
 import { authenticate, requireRole } from "../../middleware/auth.middleware"
 
 const controller = new VehicleController()
@@ -119,5 +119,20 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
       },
     },
     controller.createPosition.bind(controller)
+  )
+
+  server.get(
+    "/vehicles/:id/eta",
+    {
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      schema: {
+        summary: "Check if this vehicle's route is near a given point, and its ETA",
+        tags: ["Vehicles"],
+        params: z.object({ id: z.string().uuid() }),
+        querystring: etaQuerySchema,
+        response: { 200: etaSchema, 404: z.object({ message: z.string() }) },
+      },
+    },
+    controller.getEta.bind(controller)
   )
 }

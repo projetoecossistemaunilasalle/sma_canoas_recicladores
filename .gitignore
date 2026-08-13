@@ -40,3 +40,7 @@ Thumbs.db
 
 # Test artifacts
 *.tsbuildinfo
+
+# Raw OSM data extracts (regenerate via backend/data/README.md)
+backend/data/*.osm
+backend/data/*.pbf

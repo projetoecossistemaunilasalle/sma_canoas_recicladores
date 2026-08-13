@@ -70,4 +70,10 @@ export class VehicleController {
     const pos = await service.createPosition(request.params.id, request.body)
     return reply.status(201).send(pos)
   }
+
+  async getEta(request: FastifyRequest<{ Params: { id: string }; Querystring: { lat: number; lng: number } }>, reply: FastifyReply) {
+    const eta = await service.getEta(request.params.id, request.query.lat, request.query.lng)
+    if (!eta) return reply.status(404).send({ message: "Vehicle not found or has no positions" })
+    return reply.send(eta)
+  }
 }

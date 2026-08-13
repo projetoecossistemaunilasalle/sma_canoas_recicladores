@@ -1,5 +1,10 @@
 import { z } from "zod"
 
+const dayOfWeek = z.enum(["seg", "ter", "qua", "qui", "sex", "sab", "dom"])
+const shift = z.enum(["manha", "tarde", "noite"])
+// HH:MM or HH:MM:SS
+const timeString = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)
+
 export const collectionRouteSchema = z.object({
   id: z.string().uuid(),
   vehicleId: z.string().uuid().nullable().optional(),
@@ -8,6 +13,9 @@ export const collectionRouteSchema = z.object({
   totalDistanceKm: z.number().nullable().optional(),
   totalDurationSeconds: z.number().nullable().optional(),
   scheduledDate: z.string().nullable().optional(),
+  daysOfWeek: z.array(dayOfWeek).nullable().optional(),
+  shift: shift.nullable().optional(),
+  startTime: z.string().nullable().optional(),
   startedAt: z.date().nullable().optional(),
   completedAt: z.date().nullable().optional(),
   createdAt: z.date().optional(),
@@ -19,6 +27,9 @@ export const createCollectionRouteSchema = z.object({
   totalDistanceKm: z.number().optional(),
   totalDurationSeconds: z.number().optional(),
   scheduledDate: z.string().optional(),
+  daysOfWeek: z.array(dayOfWeek).min(1),
+  shift: shift,
+  startTime: timeString,
 })
 
 export const updateCollectionRouteSchema = z.object({
@@ -27,8 +38,25 @@ export const updateCollectionRouteSchema = z.object({
   totalDistanceKm: z.number().optional(),
   totalDurationSeconds: z.number().optional(),
   scheduledDate: z.string().optional(),
+  daysOfWeek: z.array(dayOfWeek).min(1).optional(),
+  shift: shift.optional(),
+  startTime: timeString.optional(),
   startedAt: z.date().nullable().optional(),
   completedAt: z.date().nullable().optional(),
+})
+
+export const routeStopSchema = z.object({
+  streetId: z.number(),
+  stopOrder: z.number(),
+  name: z.string().nullable(),
+  geom: z.string(),
+})
+
+export const routePreviewSegmentSchema = z.object({
+  streetId: z.number(),
+  isStop: z.boolean(),
+  name: z.string().nullable(),
+  geom: z.string(),
 })
 
 export const routeStreetSchema = z.object({
