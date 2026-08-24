@@ -1,6 +1,7 @@
 import cors from '@fastify/cors'
 import swagger from "@fastify/swagger"
 import swaggerUi from "@fastify/swagger-ui"
+import websocket from "@fastify/websocket"
 import { fastify } from "fastify"
 import {
 	hasZodFastifySchemaValidationErrors,
@@ -13,6 +14,9 @@ import { userRoutes } from './routes/users/user.routes'
 import { routeRoutes } from './routes/routes/route.routes'
 import { vehicleRoutes } from './routes/vehicles/vehicle.routes'
 import { streetRoutes } from './routes/streets/street.routes'
+import { publicTrackingRoutes } from './routes/public-tracking/public-tracking.routes'
+import { wsRoutes } from './routes/ws/ws.routes'
+import { startMultiportalSync } from './integrations/multiportal-sync'
 
 
 const server = fastify()
@@ -42,6 +46,8 @@ server.register(cors, {
 	origin: "*",
 })
 
+server.register(websocket)
+
 
 server.register(health)
 server.register(cooperativeRoutes)
@@ -49,9 +55,12 @@ server.register(userRoutes)
 server.register(routeRoutes)
 server.register(vehicleRoutes)
 server.register(streetRoutes)
+server.register(publicTrackingRoutes)
+server.register(wsRoutes)
 
 const port = Number(process.env.PORT) || 3333
 
 server.listen({ port, host: "0.0.0.0" }).then(() => {
 	console.log(`Server is running on http://localhost:${port}`)
+	startMultiportalSync()
 })

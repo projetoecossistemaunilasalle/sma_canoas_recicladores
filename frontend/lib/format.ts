@@ -38,3 +38,28 @@ const routeStatusLabels: Record<string, string> = {
 export function routeStatusLabel(status: string): string {
   return routeStatusLabels[status] ?? status;
 }
+
+// "09:12:00" -> "09:12"
+export function formatTime(time: string): string {
+  return time.slice(0, 5);
+}
+
+const WEEKDAY_FULL = [
+  "domingo",
+  "segunda-feira",
+  "terça-feira",
+  "quarta-feira",
+  "quinta-feira",
+  "sexta-feira",
+  "sábado",
+];
+
+// Display-only label for "how many days from today" — the authoritative
+// scheduling decision (daysAhead) already comes from the backend using
+// Postgres's clock; this just picks a human day name for it.
+export function weekdayLabelFromOffset(daysAhead: number): string {
+  if (daysAhead === 1) return "amanhã";
+  const d = new Date();
+  d.setDate(d.getDate() + daysAhead);
+  return WEEKDAY_FULL[d.getDay()];
+}

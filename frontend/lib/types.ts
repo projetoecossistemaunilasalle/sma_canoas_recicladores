@@ -107,3 +107,57 @@ export interface EtaResult {
   currentStreet: string | null;
   citizenStreet: string | null;
 }
+
+// Public home (unauthenticated) tracking — see backend/src/routes/public-tracking.
+
+export interface GeocodeResult {
+  label: string;
+  lat: number;
+  lng: number;
+}
+
+export interface PublicVehicleSummary {
+  id: string;
+  plate: string | null;
+  model: string | null;
+  color: string | null;
+  type: VehicleType;
+}
+
+export interface PublicVehiclePosition {
+  lat: number;
+  lng: number;
+  recordedAt: string;
+}
+
+export type CollectionCheckResult =
+  | { status: "no_route"; street?: string | null }
+  | {
+      status: "scheduled_future";
+      street: string | null;
+      daysAhead: number;
+      startTime: string;
+      vehicle: PublicVehicleSummary;
+    }
+  | {
+      status: "scheduled_today";
+      street: string | null;
+      startTime: string;
+      vehicle: PublicVehicleSummary;
+    }
+  | {
+      status: "arriving";
+      street: string | null;
+      etaStatus: "na_rua" | "chegando";
+      etaSeconds: number;
+      etaText: string;
+      distanceKm: number;
+      vehicle: PublicVehicleSummary;
+      position: PublicVehiclePosition | null;
+    }
+  | {
+      status: "passed";
+      street: string | null;
+      vehicle: PublicVehicleSummary;
+      passedApproxAt: string | null;
+    };

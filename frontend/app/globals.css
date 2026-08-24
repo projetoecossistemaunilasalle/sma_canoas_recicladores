@@ -114,3 +114,19 @@ body {
   line-height: 24px;
   font-weight: 600;
 }
+
+/* Permanent label next to the live truck marker on the public home map. */
+.truck-tooltip {
+  background: var(--color-surface-container-lowest);
+  color: var(--color-on-surface);
+  border: none;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.18);
+}
+.truck-tooltip::before {
+  display: none;
+}

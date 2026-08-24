@@ -1,6 +1,7 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { VehicleService } from "./vehicle.service"
 import type { JwtPayload } from "../../lib/jwt"
+import { recordAndBroadcastPosition } from "../../lib/position-ingest"
 
 const service = new VehicleService()
 
@@ -67,7 +68,7 @@ export class VehicleController {
   }
 
   async createPosition(request: FastifyRequest<{ Params: { id: string }; Body: { location: string } }>, reply: FastifyReply) {
-    const pos = await service.createPosition(request.params.id, request.body)
+    const pos = await recordAndBroadcastPosition(request.params.id, request.body.location)
     return reply.status(201).send(pos)
   }
 
