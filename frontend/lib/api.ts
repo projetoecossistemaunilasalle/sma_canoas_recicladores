@@ -25,7 +25,9 @@ export async function apiFetch<T>(
     headers: {
       ...init?.headers,
       Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
+      // Only set for requests with a body — Fastify's JSON parser rejects an
+      // empty body sent with this header (e.g. plain DELETE calls).
+      ...(init?.body ? { "Content-Type": "application/json" } : {}),
     },
     cache: "no-store",
   });

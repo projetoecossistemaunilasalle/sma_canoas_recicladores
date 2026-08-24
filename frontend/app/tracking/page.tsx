@@ -36,9 +36,9 @@ export default async function TrackingPage() {
       </header>
       <div className="max-w-2xl mx-auto px-container-margin py-8 flex flex-col gap-6">
         <div className="flex flex-col gap-2">
-          <h1 className="text-display-lg text-on-surface">Onde está o caminhão?</h1>
+          <h1 className="text-display-lg text-on-surface">Onde está o veículo?</h1>
           <p className="text-body-lg text-on-surface-variant">
-            Olá, {user.name}. Escolha o caminhão da sua região e sua localização para saber
+            Olá, {user.name}. Escolha o veículo da sua região e sua localização para saber
             se ele passa perto de você hoje.
           </p>
         </div>

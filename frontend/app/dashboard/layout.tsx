@@ -73,6 +73,13 @@ export default async function DashboardLayout({
             <span className="material-symbols-outlined mr-4">route</span>
             <span className="text-label-lg">Rotas de Coleta</span>
           </Link>
+          <Link
+            className="flex items-center h-12 px-4 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
+            href="/dashboard/vehicles"
+          >
+            <span className="material-symbols-outlined mr-4">local_shipping</span>
+            <span className="text-label-lg">Veículos</span>
+          </Link>
           {comingSoonNav.map((item) => (
             <span
               key={item.label}

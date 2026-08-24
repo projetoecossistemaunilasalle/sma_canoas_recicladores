@@ -26,7 +26,7 @@ export class VehicleController {
     return reply.send(v)
   }
 
-  async create(request: FastifyRequest<{ Body: { plate?: string; model?: string; color?: string; cooperativeId?: string; active?: boolean } }>, reply: FastifyReply) {
+  async create(request: FastifyRequest<{ Body: { plate?: string; model?: string; color?: string; type?: string; cooperativeId?: string; active?: boolean } }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
     let cooperativeId = request.body.cooperativeId
     if (currentUser.role === "cooperative_admin") {
@@ -36,7 +36,7 @@ export class VehicleController {
     return reply.status(201).send(v)
   }
 
-  async update(request: FastifyRequest<{ Params: { id: string }; Body: Partial<{ plate?: string; model?: string; color?: string; cooperativeId?: string; active?: boolean }> }>, reply: FastifyReply) {
+  async update(request: FastifyRequest<{ Params: { id: string }; Body: Partial<{ plate?: string; model?: string; color?: string; type?: string; cooperativeId?: string; active?: boolean }> }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
     const filter = getCooperativeFilter(request)
     if (currentUser.role === "cooperative_admin" && request.body.cooperativeId) {

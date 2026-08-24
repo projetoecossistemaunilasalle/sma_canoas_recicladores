@@ -9,6 +9,7 @@ import {
 } from "@/lib/data";
 import { parseWktPoint, relativeTime, routeStatusLabel } from "@/lib/format";
 import type { Vehicle, VehiclePosition } from "@/lib/types";
+import { vehicleColorHex, vehicleTypeIcon, vehicleTypeLabel } from "@/lib/vehicle-options";
 import type { FleetMapPoint } from "./fleet-map";
 import FleetMap from "./fleet-map-client";
 
@@ -47,6 +48,8 @@ export default async function DashboardPage() {
         sublabel: `Atualizado ${relativeTime(position.recordedAt)}`,
         lat: coords.lat,
         lng: coords.lng,
+        color: vehicle.color,
+        type: vehicle.type,
       },
     ];
   });
@@ -190,9 +193,13 @@ function VehicleRow({
 
   return (
     <div className="bg-surface p-3 rounded-xl flex items-center gap-4">
-      <div className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+      <div
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white"
+        style={{ backgroundColor: vehicleColorHex(vehicle.color) }}
+        title={vehicleTypeLabel(vehicle.type)}
+      >
         <span className="material-symbols-outlined text-[20px]">
-          local_shipping
+          {vehicleTypeIcon(vehicle.type)}
         </span>
       </div>
       <div className="flex-1 min-w-0">

@@ -3,6 +3,7 @@ CREATE TABLE IF NOT EXISTS vehicles (
     plate TEXT UNIQUE,
     model TEXT,
     color TEXT,
+    type TEXT NOT NULL DEFAULT 'caminhao' CHECK (type IN ('caminhao', 'bicicleta')),
     cooperative_id UUID REFERENCES cooperatives(id),
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),

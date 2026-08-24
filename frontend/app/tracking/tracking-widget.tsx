@@ -50,7 +50,7 @@ export function TrackingWidget({ vehicles }: { vehicles: Vehicle[] }) {
       <div className="bg-surface-container rounded-2xl p-6 shadow-sm flex flex-col gap-4">
         <div className="flex flex-col gap-2">
           <label className="text-label-lg text-on-surface-variant" htmlFor="vehicleId">
-            Caminhão
+            Veículo
           </label>
           <select
             className="bg-surface-container-highest text-on-surface rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
@@ -58,7 +58,7 @@ export function TrackingWidget({ vehicles }: { vehicles: Vehicle[] }) {
             value={vehicleId}
             onChange={(e) => setVehicleId(e.target.value)}
           >
-            <option value="">Selecione um caminhão...</option>
+            <option value="">Selecione um veículo...</option>
             {vehicles.map((v) => (
               <option key={v.id} value={v.id}>
                 {v.plate ?? "Sem placa"}
@@ -115,7 +115,7 @@ export function TrackingWidget({ vehicles }: { vehicles: Vehicle[] }) {
             {result.citizenStreet ? (
               <p className="text-body-md text-on-surface-variant">
                 Sua rua: {result.citizenStreet}
-                {result.currentStreet ? ` · Caminhão em: ${result.currentStreet}` : ""}
+                {result.currentStreet ? ` · Veículo em: ${result.currentStreet}` : ""}
               </p>
             ) : null}
             {result.streetsRemaining > 0 ? (

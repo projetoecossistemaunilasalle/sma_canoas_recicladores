@@ -1,10 +1,13 @@
 import { z } from "zod"
 
+export const vehicleTypeSchema = z.enum(["caminhao", "bicicleta"])
+
 export const vehicleSchema = z.object({
   id: z.string().uuid(),
   plate: z.string().nullable().optional(),
   model: z.string().nullable().optional(),
   color: z.string().nullable().optional(),
+  type: vehicleTypeSchema.default("caminhao"),
   cooperativeId: z.string().uuid().nullable().optional(),
   active: z.boolean().default(true),
   createdAt: z.date().optional(),
@@ -15,6 +18,7 @@ export const createVehicleSchema = z.object({
   plate: z.string().optional(),
   model: z.string().optional(),
   color: z.string().optional(),
+  type: vehicleTypeSchema.optional(),
   cooperativeId: z.string().uuid().optional(),
   active: z.boolean().optional(),
 })

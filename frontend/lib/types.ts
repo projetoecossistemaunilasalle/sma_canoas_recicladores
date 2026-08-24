@@ -21,11 +21,14 @@ export interface Cooperative {
   updatedAt?: string;
 }
 
+export type VehicleType = "caminhao" | "bicicleta";
+
 export interface Vehicle {
   id: string;
   plate: string | null;
   model: string | null;
   color: string | null;
+  type: VehicleType;
   cooperativeId: string | null;
   active: boolean;
   createdAt?: string;

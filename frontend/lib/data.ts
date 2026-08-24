@@ -15,6 +15,41 @@ export function getVehicles(token: string) {
   return apiFetch<Vehicle[]>("/vehicles", token);
 }
 
+export function getVehicle(token: string, id: string) {
+  return apiFetch<Vehicle>(`/vehicles/${id}`, token);
+}
+
+export interface VehicleInput {
+  plate?: string;
+  model?: string;
+  color?: string;
+  type?: string;
+  cooperativeId?: string;
+  active?: boolean;
+}
+
+export function createVehicle(token: string, data: VehicleInput) {
+  return apiFetch<Vehicle>("/vehicles", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateVehicle(token: string, id: string, data: VehicleInput) {
+  return apiFetch<Vehicle>(`/vehicles/${id}`, token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteVehicle(token: string, id: string) {
+  return apiFetch<void>(`/vehicles/${id}`, token, { method: "DELETE" });
+}
+
+export function getCooperatives(token: string) {
+  return apiFetch<Cooperative[]>("/cooperatives", token);
+}
+
 export function getRoutes(token: string) {
   return apiFetch<CollectionRoute[]>("/routes", token);
 }
