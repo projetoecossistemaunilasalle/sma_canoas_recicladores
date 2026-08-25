@@ -33,7 +33,7 @@ async function seed() {
   // 2. USERS
   // ============================================
   const admins = [
-    { email: "admin@coopcamate.com", coop: "Coopcamate" },
+    { email: "in@coopcamate.com", coop: "Coopcamate" },
     { email: "admin@renascer.com", coop: "Renascer" },
     { email: "admin@cooarlas.com", coop: "Cooarlas" },
     { email: "admin@coopermag.com", coop: "Coopermag" },

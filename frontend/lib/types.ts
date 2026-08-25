@@ -39,7 +39,15 @@ export interface VehiclePosition {
   recordedAt: string;
 }
 
-export type DayOfWeek = "seg" | "ter" | "qua" | "qui" | "sex" | "sab" | "dom";
+export type DayOfWeek =
+  | "seg"
+  | "ter"
+  | "qua"
+  | "qui"
+  | "sex"
+  | "sab"
+  | "dom";
+
 export type Shift = "manha" | "tarde" | "noite";
 
 export interface CollectionRoute {
@@ -93,7 +101,12 @@ export interface RouteStop {
   geom: string; // WKT LineString
 }
 
-export type EtaStatus = "sem_rota" | "na_rua" | "passou" | "nao_esta_na_rota" | "chegando";
+export type EtaStatus =
+  | "sem_rota"
+  | "na_rua"
+  | "passou"
+  | "nao_esta_na_rota"
+  | "chegando";
 
 export interface EtaResult {
   status: EtaStatus;
@@ -103,4 +116,36 @@ export interface EtaResult {
   streetsRemaining: number;
   currentStreet: string | null;
   citizenStreet: string | null;
+}
+
+export interface Publication {
+  id: string;
+  title: string;
+  content: string;
+  imageUrl: string | null;
+
+  cooperativeId: string;
+
+  // Dados da cooperativa
+  address: string | null;
+  phone: string | null;
+  weekdayHours: string | null;
+  saturdayHours: string | null;
+  sundayHours: string | null;
+
+  // Foto e informação importante
+  importantPhotoUrl: string | null;
+  importantPhotoDescription: string | null;
+
+  // Foto e informação atualizada
+  updatedPhotoUrl: string | null;
+  updatedPhotoDescription: string | null;
+
+  // Data da atualização da foto
+  photoUpdatedAt: string | null;
+
+  status: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+
+  createdAt?: string;
+  updatedAt?: string;
 }
