@@ -7,7 +7,7 @@ const vehicleService = new VehicleService()
 // /posicoes/ultimaPosicao is documented as having no rate limit for
 // recurring calls, but there's no reason to poll faster than the public
 // map's own live-tracking needs.
-const POLL_INTERVAL_MS = 30_000
+const POLL_INTERVAL_MS = 5_000
 
 // Plates only ever come in already normalized from the DB (see
 // docker/postgres/initdb/003-vehicles.sql), but Multiportal's own data can

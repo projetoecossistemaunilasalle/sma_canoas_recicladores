@@ -1,7 +1,9 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
+import type { z } from "zod"
 import { RouteService } from "./route.service"
 import { StreetService } from "../streets/street.service"
 import type { JwtPayload } from "../../lib/jwt"
+import type { createCollectionRouteSchema, updateCollectionRouteSchema } from "./route.schema"
 
 const service = new RouteService()
 const streetService = new StreetService()
@@ -29,7 +31,7 @@ export class RouteController {
     return reply.send(r)
   }
 
-  async create(request: FastifyRequest<{ Body: { vehicleId: string; status?: string; totalDistanceKm?: number; totalDurationSeconds?: number; scheduledDate?: string; daysOfWeek: string[]; shift: string; startTime: string } }>, reply: FastifyReply) {
+  async create(request: FastifyRequest<{ Body: z.infer<typeof createCollectionRouteSchema> }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
     let cooperativeId: string | undefined = undefined
 
@@ -41,7 +43,7 @@ export class RouteController {
     return reply.status(201).send(r)
   }
 
-  async update(request: FastifyRequest<{ Params: { id: string }; Body: Partial<{ vehicleId: string; status: string; totalDistanceKm: number; totalDurationSeconds: number; scheduledDate: string; startedAt: string; completedAt: string }> }>, reply: FastifyReply) {
+  async update(request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof updateCollectionRouteSchema> }>, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
     const r = await service.update(request.params.id, request.body, filter)
     if (!r) return reply.status(404).send({ message: "Route not found" })

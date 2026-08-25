@@ -7,6 +7,10 @@ export interface CollectionPanelProps {
   address: string;
   result: CollectionCheckResult;
   onReset: () => void;
+  // Mobile bottom-sheet offset from the viewport edge — the public home has
+  // nothing else docked to the bottom (bottom-0), but the citizen area has a
+  // persistent tab bar the sheet needs to sit above instead of under.
+  mobileBottomClass?: string;
 }
 
 function StatusRow({ dot, children }: { dot: string; children: React.ReactNode }) {
@@ -18,9 +22,11 @@ function StatusRow({ dot, children }: { dot: string; children: React.ReactNode }
   );
 }
 
-export function CollectionPanel({ address, result, onReset }: CollectionPanelProps) {
+export function CollectionPanel({ address, result, onReset, mobileBottomClass = "bottom-0" }: CollectionPanelProps) {
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[1000] rounded-t-3xl md:static md:rounded-3xl md:w-full bg-surface-container-lowest shadow-2xl border border-outline-variant/30 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]">
+    <div
+      className={`fixed inset-x-0 ${mobileBottomClass} z-[1000] rounded-t-3xl md:static md:rounded-3xl md:w-full bg-surface-container-lowest shadow-2xl border border-outline-variant/30 p-5 pb-[max(1.25rem,env(safe-area-inset-bottom))]`}
+    >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="min-w-0">
           <p className="text-label-lg text-on-surface-variant">Coleta na sua rua</p>

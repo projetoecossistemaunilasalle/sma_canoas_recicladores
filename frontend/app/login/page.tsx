@@ -1,12 +1,13 @@
-import { redirect } from "next/navigation";
 import { getToken } from "@/lib/session";
 import { getCurrentUser } from "@/lib/auth";
+import { redirectForRole } from "@/lib/redirect-for-role";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
   const token = await getToken();
-  if (token && (await getCurrentUser(token))) {
-    redirect("/dashboard");
+  if (token) {
+    const user = await getCurrentUser(token);
+    if (user) redirectForRole(user.role);
   }
 
   return (

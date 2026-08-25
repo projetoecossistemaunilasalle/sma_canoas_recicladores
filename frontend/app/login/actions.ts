@@ -3,6 +3,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { SESSION_COOKIE } from "@/lib/constants";
+import { redirectForRole } from "@/lib/redirect-for-role";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
 
@@ -43,10 +44,7 @@ export async function login(
     maxAge: 60 * 60 * 24 * 7,
   });
 
-  if (data.user.role === "admin" || data.user.role === "cooperative_admin") {
-    redirect("/dashboard");
-  }
-  redirect("/tracking");
+  redirectForRole(data.user.role);
 }
 
 export async function logout() {

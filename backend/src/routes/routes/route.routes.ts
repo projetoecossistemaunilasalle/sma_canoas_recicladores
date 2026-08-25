@@ -20,7 +20,7 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/routes",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "List collection routes",
         tags: ["Routes"],
@@ -33,7 +33,7 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/routes/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "Get collection route by ID",
         tags: ["Routes"],
@@ -91,7 +91,7 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/routes/:id/streets",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "List streets of a route",
         tags: ["Routes"],
@@ -105,7 +105,7 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/routes/:id/stops",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "List only the streets originally picked as stops (not the auto-filled connectors)",
         tags: ["Routes"],

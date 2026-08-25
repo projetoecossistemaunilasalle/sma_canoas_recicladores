@@ -5,8 +5,8 @@ import { MapContainer, TileLayer, Polyline, CircleMarker, useMap, useMapEvents }
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { parseWktLineString } from "@/lib/format";
+import { CANOAS_CENTER } from "@/lib/geo";
 
-const CANOAS_CENTER: [number, number] = [-29.9177, -51.1844];
 const DRAG_SAMPLE_MS = 220;
 
 function FitBounds({ segments }: { segments: [number, number][][] }) {

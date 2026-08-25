@@ -8,8 +8,68 @@ import type {
   RouteStreet,
   RouteStop,
   RoutePreviewSegment,
-  EtaResult,
+  CurrentUser,
 } from "./types";
+
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
+
+export interface RegisterInput {
+  name: string;
+  email: string;
+  password: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+}
+
+// Unlike every other function in this file, registration has no token yet —
+// it's the one public/anonymous write in this server-only module.
+export async function registerUser(data: RegisterInput) {
+  const res = await fetch(`${BACKEND_URL}/register`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+    cache: "no-store",
+  });
+  const body = await res.json().catch(() => ({}) as { message?: string });
+  if (!res.ok) throw new ApiError(res.status, body.message ?? res.statusText);
+  return body as { token: string; user: CurrentUser };
+}
+
+export interface UpdateProfileInput {
+  name?: string;
+  password?: string;
+  address?: string;
+  lat?: number;
+  lng?: number;
+  notifyProximity?: boolean;
+}
+
+export function updateProfile(token: string, data: UpdateProfileInput) {
+  return apiFetch<CurrentUser>("/me", token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export interface PushSubscriptionInput {
+  endpoint: string;
+  keys: { p256dh: string; auth: string };
+}
+
+export function savePushSubscription(token: string, data: PushSubscriptionInput) {
+  return apiFetch<void>("/me/push-subscription", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deletePushSubscription(token: string, endpoint: string) {
+  return apiFetch<void>("/me/push-subscription", token, {
+    method: "DELETE",
+    body: JSON.stringify({ endpoint }),
+  });
+}
 
 export function getVehicles(token: string) {
   return apiFetch<Vehicle[]>("/vehicles", token);
@@ -85,10 +145,6 @@ export async function getLatestPosition(
   }
 }
 
-export function searchStreets(token: string, search: string) {
-  const query = search ? `?search=${encodeURIComponent(search)}&limit=20` : "?limit=20";
-  return apiFetch<Street[]>(`/streets${query}`, token);
-}
 
 export async function getNearestStreet(
   token: string,
@@ -148,23 +204,6 @@ export async function previewRoute(
     });
   } catch (err) {
     if (err instanceof ApiError) return null;
-    throw err;
-  }
-}
-
-export async function getEta(
-  token: string,
-  vehicleId: string,
-  lat: number,
-  lng: number
-): Promise<EtaResult | null> {
-  try {
-    return await apiFetch<EtaResult>(
-      `/vehicles/${vehicleId}/eta?lat=${lat}&lng=${lng}`,
-      token
-    );
-  } catch (err) {
-    if (err instanceof ApiError && err.status === 404) return null;
     throw err;
   }
 }

@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import PublicMapClient from "./public-map-client";
 import { AddressSearch } from "./address-search";
 import { AuthPanel } from "./auth-panel";
+import { BrandHeader } from "./brand-header";
 import { CollectionPanel } from "./collection-panel";
 import { checkCollectionForAddress } from "@/lib/public-api";
 import { useVehicleTracking } from "@/lib/use-vehicle-tracking";
@@ -77,6 +78,7 @@ export function PublicHome() {
 
       <div className="absolute top-4 left-4 right-4 z-[1000] flex items-start justify-between gap-3 pointer-events-none">
         <div className="pointer-events-auto flex flex-col gap-3 items-start w-full max-w-sm">
+          <BrandHeader />
           <AddressSearch
             onSelect={handleSelect}
             onClear={handleReset}

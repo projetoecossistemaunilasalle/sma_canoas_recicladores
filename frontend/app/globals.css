@@ -115,6 +115,14 @@ body {
   font-weight: 600;
 }
 
+/* Smooths out live position updates (fleet dashboard, public/citizen truck
+   tracking) — Leaflet repositions markers by changing this transform, and by
+   default it just jumps; animating it makes movement read as motion instead
+   of teleporting every time a new GPS fix arrives. */
+.leaflet-marker-icon {
+  transition: transform 0.6s linear;
+}
+
 /* Permanent label next to the live truck marker on the public home map. */
 .truck-tooltip {
   background: var(--color-surface-container-lowest);

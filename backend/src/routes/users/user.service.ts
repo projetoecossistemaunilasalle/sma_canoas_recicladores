@@ -1,6 +1,6 @@
 import { eq, and } from "drizzle-orm"
 import { db } from "../../db"
-import { users, type NewUser } from "../../db/schema"
+import { users, pushSubscriptions, type NewUser, type NewPushSubscription } from "../../db/schema"
 import { hashPassword } from "../../lib/password"
 
 export class UserService {
@@ -64,5 +64,28 @@ export class UserService {
     }
     const [user] = await query
     return user ?? null
+  }
+
+  // Push subscriptions (Web Push, for proximity notifications)
+  async savePushSubscription(data: NewPushSubscription) {
+    const [sub] = await db
+      .insert(pushSubscriptions)
+      .values(data)
+      .onConflictDoUpdate({
+        target: pushSubscriptions.endpoint,
+        set: { userId: data.userId, p256dh: data.p256dh, auth: data.auth },
+      })
+      .returning()
+    return sub
+  }
+
+  async deletePushSubscription(userId: string, endpoint: string) {
+    await db
+      .delete(pushSubscriptions)
+      .where(and(eq(pushSubscriptions.userId, userId), eq(pushSubscriptions.endpoint, endpoint)))
+  }
+
+  async findPushSubscriptions(userId: string) {
+    return db.select().from(pushSubscriptions).where(eq(pushSubscriptions.userId, userId))
   }
 }

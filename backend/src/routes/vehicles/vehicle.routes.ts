@@ -10,7 +10,7 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "List vehicles",
         tags: ["Vehicles"],
@@ -23,7 +23,7 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "Get vehicle by ID",
         tags: ["Vehicles"],
@@ -80,7 +80,7 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id/positions",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "Get vehicle positions history",
         tags: ["Vehicles"],
@@ -95,7 +95,7 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id/positions/latest",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "Get latest vehicle position",
         tags: ["Vehicles"],
@@ -124,7 +124,7 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id/eta",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
       schema: {
         summary: "Check if this vehicle's route is near a given point, and its ETA",
         tags: ["Vehicles"],

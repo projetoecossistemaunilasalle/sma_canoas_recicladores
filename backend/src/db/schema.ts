@@ -42,8 +42,26 @@ export const users = pgTable("users", {
   active: boolean("active").notNull().default(true),
   cooperativeId: uuid("cooperative_id").references(() => cooperatives.id),
   address: text("address"),
+  // Geocoded coordinates of `address`, kept in sync with it (see /public/geocode) —
+  // lets the citizen-facing "Minha Coleta" screen reuse the public collection-check
+  // flow without re-searching the address every visit.
+  addressLat: doublePrecision("address_lat"),
+  addressLng: doublePrecision("address_lng"),
+  notifyProximity: boolean("notify_proximity").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+// ============================================
+// PUSH SUBSCRIPTIONS (Web Push, for proximity notifications)
+// ============================================
+export const pushSubscriptions = pgTable("push_subscriptions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: uuid("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  endpoint: text("endpoint").notNull().unique(),
+  p256dh: text("p256dh").notNull(),
+  auth: text("auth").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
 // ============================================
@@ -135,10 +153,18 @@ export const cooperativesRelations = relations(cooperatives, ({ many }) => ({
   routes: many(collectionRoutes),
 }))
 
-export const usersRelations = relations(users, ({ one }) => ({
+export const usersRelations = relations(users, ({ one, many }) => ({
   cooperative: one(cooperatives, {
     fields: [users.cooperativeId],
     references: [cooperatives.id],
+  }),
+  pushSubscriptions: many(pushSubscriptions),
+}))
+
+export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
+  user: one(users, {
+    fields: [pushSubscriptions.userId],
+    references: [users.id],
   }),
 }))
 
@@ -186,6 +212,8 @@ export type Cooperative = typeof cooperatives.$inferSelect
 export type NewCooperative = typeof cooperatives.$inferInsert
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
+export type PushSubscription = typeof pushSubscriptions.$inferSelect
+export type NewPushSubscription = typeof pushSubscriptions.$inferInsert
 export type Vehicle = typeof vehicles.$inferSelect
 export type NewVehicle = typeof vehicles.$inferInsert
 export type VehiclePosition = typeof vehiclePositions.$inferSelect

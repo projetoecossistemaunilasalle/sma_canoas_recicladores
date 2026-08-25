@@ -1,7 +1,16 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { UserController } from "./user.controller"
-import { createUserSchema, updateUserSchema, userSchema, loginSchema, loginResponseSchema } from "./user.schema"
+import {
+  createUserSchema,
+  updateUserSchema,
+  userSchema,
+  loginSchema,
+  loginResponseSchema,
+  registerSchema,
+  updateProfileSchema,
+  pushSubscriptionSchema,
+} from "./user.schema"
 import { authenticate, requireRole } from "../../middleware/auth.middleware"
 
 const controller = new UserController()
@@ -20,6 +29,19 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
     controller.login.bind(controller)
   )
 
+  server.post(
+    "/register",
+    {
+      schema: {
+        summary: "Public citizen self-registration",
+        tags: ["Auth"],
+        body: registerSchema,
+        response: { 201: loginResponseSchema, 409: z.object({ message: z.string() }) },
+      },
+    },
+    controller.register.bind(controller)
+  )
+
   server.get(
     "/me",
     {
@@ -31,6 +53,48 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
       },
     },
     controller.me.bind(controller)
+  )
+
+  server.put(
+    "/me",
+    {
+      preHandler: [authenticate],
+      schema: {
+        summary: "Update current user's own profile",
+        tags: ["Users"],
+        body: updateProfileSchema,
+        response: { 200: userSchema, 404: z.object({ message: z.string() }) },
+      },
+    },
+    controller.updateMe.bind(controller)
+  )
+
+  server.post(
+    "/me/push-subscription",
+    {
+      preHandler: [authenticate],
+      schema: {
+        summary: "Save a Web Push subscription for the current user",
+        tags: ["Users"],
+        body: pushSubscriptionSchema,
+        response: { 204: z.any() },
+      },
+    },
+    controller.savePushSubscription.bind(controller)
+  )
+
+  server.delete(
+    "/me/push-subscription",
+    {
+      preHandler: [authenticate],
+      schema: {
+        summary: "Remove a Web Push subscription for the current user",
+        tags: ["Users"],
+        body: z.object({ endpoint: z.string() }),
+        response: { 204: z.any() },
+      },
+    },
+    controller.deletePushSubscription.bind(controller)
   )
 
   server.get(

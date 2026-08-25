@@ -7,11 +7,9 @@ import {
   getCooperative,
   getLatestPosition,
 } from "@/lib/data";
-import { parseWktPoint, relativeTime, routeStatusLabel } from "@/lib/format";
-import type { Vehicle, VehiclePosition } from "@/lib/types";
-import { vehicleColorHex, vehicleTypeIcon, vehicleTypeLabel } from "@/lib/vehicle-options";
-import type { FleetMapPoint } from "./fleet-map";
-import FleetMap from "./fleet-map-client";
+import { parseWktPoint, routeStatusLabel } from "@/lib/format";
+import type { VehiclePosition } from "@/lib/types";
+import { FleetMonitor, type FleetVehicleInfo } from "./fleet-monitor";
 
 export default async function DashboardPage() {
   const token = await getToken();
@@ -37,21 +35,20 @@ export default async function DashboardPage() {
   const activeVehicles = vehicles.filter((v) => v.active).length;
   const activeRoutes = routes.filter((r) => r.status === "active").length;
 
-  const mapPoints: FleetMapPoint[] = vehicles.flatMap((vehicle) => {
+  const fleetVehicles: FleetVehicleInfo[] = vehicles.map((vehicle) => {
     const position = positions.get(vehicle.id);
     const coords = position ? parseWktPoint(position.location) : null;
-    if (!position || !coords) return [];
-    return [
-      {
-        id: vehicle.id,
-        label: `${vehicle.plate ?? "Sem placa"}${vehicle.model ? ` · ${vehicle.model}` : ""}`,
-        sublabel: `Atualizado ${relativeTime(position.recordedAt)}`,
-        lat: coords.lat,
-        lng: coords.lng,
-        color: vehicle.color,
-        type: vehicle.type,
-      },
-    ];
+    return {
+      id: vehicle.id,
+      plate: vehicle.plate,
+      model: vehicle.model,
+      color: vehicle.color,
+      type: vehicle.type,
+      active: vehicle.active,
+      initialLat: coords?.lat ?? null,
+      initialLng: coords?.lng ?? null,
+      initialRecordedAt: position?.recordedAt ?? null,
+    };
   });
 
   const title = cooperative
@@ -100,20 +97,7 @@ export default async function DashboardPage() {
             Monitoramento de Frota
           </h2>
         </div>
-        <FleetMap points={mapPoints} />
-        {vehicles.length === 0 ? (
-          <EmptyState message="Nenhum veículo cadastrado ainda." />
-        ) : (
-          <div className="flex flex-col gap-3">
-            {vehicles.map((vehicle) => (
-              <VehicleRow
-                key={vehicle.id}
-                vehicle={vehicle}
-                position={positions.get(vehicle.id) ?? null}
-              />
-            ))}
-          </div>
-        )}
+        <FleetMonitor vehicles={fleetVehicles} />
       </section>
 
       <section className="bg-surface-container rounded-2xl p-6 shadow-sm flex flex-col gap-4">
@@ -178,50 +162,6 @@ function StatCard({
           </span>
         </div>
       </div>
-    </div>
-  );
-}
-
-function VehicleRow({
-  vehicle,
-  position,
-}: {
-  vehicle: Vehicle;
-  position: VehiclePosition | null;
-}) {
-  const coords = position ? parseWktPoint(position.location) : null;
-
-  return (
-    <div className="bg-surface p-3 rounded-xl flex items-center gap-4">
-      <div
-        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 text-white"
-        style={{ backgroundColor: vehicleColorHex(vehicle.color) }}
-        title={vehicleTypeLabel(vehicle.type)}
-      >
-        <span className="material-symbols-outlined text-[20px]">
-          {vehicleTypeIcon(vehicle.type)}
-        </span>
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-label-lg text-on-surface truncate">
-          {vehicle.plate ?? "Sem placa"}
-          {vehicle.model ? ` · ${vehicle.model}` : ""}
-        </p>
-        <p className="text-body-md text-xs text-on-surface-variant truncate">
-          {coords && position
-            ? `${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)} · ${relativeTime(position.recordedAt)}`
-            : "Sem posição registrada"}
-        </p>
-      </div>
-      <span
-        className={`text-[10px] uppercase px-2 py-0.5 rounded-full shrink-0 ${
-          vehicle.active
-            ? "text-primary bg-primary/10"
-            : "text-on-surface-variant bg-surface-variant"
-        }`}
-      >
-        {vehicle.active ? "Ativo" : "Inativo"}
-      </span>
     </div>
   );
 }

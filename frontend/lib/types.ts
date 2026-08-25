@@ -6,6 +6,9 @@ export interface CurrentUser {
   active: boolean;
   cooperativeId: string | null;
   address: string | null;
+  addressLat: number | null;
+  addressLng: number | null;
+  notifyProximity: boolean;
 }
 
 export interface Cooperative {
@@ -94,18 +97,6 @@ export interface RouteStop {
   stopOrder: number;
   name: string | null;
   geom: string; // WKT LineString
-}
-
-export type EtaStatus = "sem_rota" | "na_rua" | "passou" | "nao_esta_na_rota" | "chegando";
-
-export interface EtaResult {
-  status: EtaStatus;
-  etaSeconds: number;
-  etaText: string;
-  distanceKm: number;
-  streetsRemaining: number;
-  currentStreet: string | null;
-  citizenStreet: string | null;
 }
 
 // Public home (unauthenticated) tracking — see backend/src/routes/public-tracking.

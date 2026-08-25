@@ -17,6 +17,7 @@ import { streetRoutes } from './routes/streets/street.routes'
 import { publicTrackingRoutes } from './routes/public-tracking/public-tracking.routes'
 import { wsRoutes } from './routes/ws/ws.routes'
 import { startMultiportalSync } from './integrations/multiportal-sync'
+import { startProximityNotifier } from './integrations/proximity-notifier'
 
 
 const server = fastify()
@@ -63,4 +64,5 @@ const port = Number(process.env.PORT) || 3333
 server.listen({ port, host: "0.0.0.0" }).then(() => {
 	console.log(`Server is running on http://localhost:${port}`)
 	startMultiportalSync()
+	startProximityNotifier()
 })

@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { vehicleColorHex, vehicleIconTextColor, vehicleTypeIcon } from "@/lib/vehicle-options";
+import { CANOAS_CENTER } from "@/lib/geo";
 import type { VehicleType } from "@/lib/types";
 
 // Leaflet's default marker icon paths break once bundled by Next.js — point
@@ -44,9 +45,6 @@ function vehicleDivIcon(color: string | null, type: VehicleType) {
   });
 }
 
-// Canoas, RS — used only as the fallback center when no vehicle has a position yet.
-const CANOAS_CENTER: [number, number] = [-29.9177, -51.1844];
-
 function FitBounds({ points }: { points: FleetMapPoint[] }) {
   const map = useMap();
 
@@ -63,6 +61,9 @@ function FitBounds({ points }: { points: FleetMapPoint[] }) {
   return null;
 }
 
+// Purely presentational — the caller (FleetMonitor) owns the live-tracking
+// WebSocket and passes already-current lat/lng in `points`, so both the map
+// and the vehicle list below it stay in sync off one shared connection.
 export function FleetMap({ points }: { points: FleetMapPoint[] }) {
   const icons = useMemo(() => {
     const map = new Map<string, L.DivIcon>();

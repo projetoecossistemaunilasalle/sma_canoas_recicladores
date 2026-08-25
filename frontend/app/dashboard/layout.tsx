@@ -1,14 +1,8 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getToken } from "@/lib/session";
 import { getCurrentUser } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
-
-const comingSoonNav = [
-  { icon: "analytics", label: "teste 2" },
-  { icon: "group", label: "Equipe" },
-  { icon: "settings", label: "Configurações" },
-];
+import { DashboardNav } from "./dashboard-nav";
 
 export default async function DashboardLayout({
   children,
@@ -59,44 +53,7 @@ export default async function DashboardLayout({
             </span>
           </div>
         </div>
-        <nav className="flex-1 px-4 space-y-1 hidden md:block">
-          <span className="flex items-center h-12 px-4 rounded-xl bg-secondary-container text-on-secondary-container font-bold">
-            <span className="material-symbols-outlined mr-4">
-              dashboard
-            </span>
-            <span className="text-label-lg">Dashboard</span>
-          </span>
-          <Link
-            className="flex items-center h-12 px-4 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
-            href="/dashboard/routes"
-          >
-            <span className="material-symbols-outlined mr-4">route</span>
-            <span className="text-label-lg">Rotas de Coleta</span>
-          </Link>
-          <Link
-            className="flex items-center h-12 px-4 rounded-xl text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-all"
-            href="/dashboard/vehicles"
-          >
-            <span className="material-symbols-outlined mr-4">local_shipping</span>
-            <span className="text-label-lg">Veículos</span>
-          </Link>
-          {comingSoonNav.map((item) => (
-            <span
-              key={item.label}
-              className="flex items-center justify-between h-12 px-4 rounded-xl text-on-surface-variant/50 cursor-not-allowed"
-            >
-              <span className="flex items-center">
-                <span className="material-symbols-outlined mr-4">
-                  {item.icon}
-                </span>
-                <span className="text-label-lg">{item.label}</span>
-              </span>
-              <span className="text-[10px] uppercase tracking-wider bg-surface-variant px-2 py-0.5 rounded-full">
-                Em breve
-              </span>
-            </span>
-          ))}
-        </nav>
+        <DashboardNav />
         <div className="p-8 border-t border-outline-variant mt-auto flex items-center justify-between gap-3">
           <div className="flex items-center gap-4 min-w-0">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
