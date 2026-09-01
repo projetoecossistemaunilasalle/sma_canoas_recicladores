@@ -1,7 +1,18 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { VehicleController } from "./vehicle.controller"
-import { vehicleSchema, createVehicleSchema, updateVehicleSchema, vehiclePositionSchema, createPositionSchema, etaQuerySchema, etaSchema } from "./vehicle.schema"
+import {
+  vehicleSchema,
+  createVehicleSchema,
+  updateVehicleSchema,
+  vehiclePositionSchema,
+  createPositionSchema,
+  etaQuerySchema,
+  etaSchema,
+  loanVehicleSchema,
+  endLoanSchema,
+  routeConflictSchema,
+} from "./vehicle.schema"
 import { authenticate, requireRole } from "../../middleware/auth.middleware"
 
 const controller = new VehicleController()
@@ -134,5 +145,45 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
       },
     },
     controller.getEta.bind(controller)
+  )
+
+  server.post(
+    "/vehicles/:id/loan",
+    {
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      schema: {
+        summary: "Lend a vehicle to another cooperative. Returns 409 with the conflicting routes if the vehicle is on an active route and confirmUnlink wasn't set.",
+        tags: ["Vehicles"],
+        params: z.object({ id: z.string().uuid() }),
+        body: loanVehicleSchema,
+        response: {
+          200: vehicleSchema,
+          400: z.object({ message: z.string() }),
+          404: z.object({ message: z.string() }),
+          409: routeConflictSchema,
+        },
+      },
+    },
+    controller.loan.bind(controller)
+  )
+
+  server.post(
+    "/vehicles/:id/loan/return",
+    {
+      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      schema: {
+        summary: "End a vehicle's active loan. Returns 409 with the conflicting routes if the vehicle is on an active route and confirmUnlink wasn't set.",
+        tags: ["Vehicles"],
+        params: z.object({ id: z.string().uuid() }),
+        body: endLoanSchema,
+        response: {
+          200: vehicleSchema,
+          400: z.object({ message: z.string() }),
+          404: z.object({ message: z.string() }),
+          409: routeConflictSchema,
+        },
+      },
+    },
+    controller.endLoan.bind(controller)
   )
 }

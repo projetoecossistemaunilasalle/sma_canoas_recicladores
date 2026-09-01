@@ -33,9 +33,15 @@ export interface Vehicle {
   color: string | null;
   type: VehicleType;
   cooperativeId: string | null;
+  loanedToCooperativeId: string | null;
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface ConflictingRoute {
+  id: string;
+  label: string;
 }
 
 export interface VehiclePosition {

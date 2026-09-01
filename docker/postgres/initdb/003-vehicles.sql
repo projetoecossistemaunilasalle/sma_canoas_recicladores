@@ -5,10 +5,13 @@ CREATE TABLE IF NOT EXISTS vehicles (
     color TEXT,
     type TEXT NOT NULL DEFAULT 'caminhao' CHECK (type IN ('caminhao', 'bicicleta')),
     cooperative_id UUID REFERENCES cooperatives(id),
+    loaned_to_cooperative_id UUID REFERENCES cooperatives(id),
     active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+ALTER TABLE vehicles ADD COLUMN IF NOT EXISTS loaned_to_cooperative_id UUID REFERENCES cooperatives(id);
 
 INSERT INTO vehicles (plate, model, color, cooperative_id)
 VALUES

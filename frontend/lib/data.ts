@@ -106,6 +106,20 @@ export function deleteVehicle(token: string, id: string) {
   return apiFetch<void>(`/vehicles/${id}`, token, { method: "DELETE" });
 }
 
+export function loanVehicle(token: string, id: string, cooperativeId: string, confirmUnlink = false) {
+  return apiFetch<Vehicle>(`/vehicles/${id}/loan`, token, {
+    method: "POST",
+    body: JSON.stringify({ cooperativeId, confirmUnlink }),
+  });
+}
+
+export function returnVehicleLoan(token: string, id: string, confirmUnlink = false) {
+  return apiFetch<Vehicle>(`/vehicles/${id}/loan/return`, token, {
+    method: "POST",
+    body: JSON.stringify({ confirmUnlink }),
+  });
+}
+
 export function getCooperatives(token: string) {
   return apiFetch<Cooperative[]>("/cooperatives", token);
 }

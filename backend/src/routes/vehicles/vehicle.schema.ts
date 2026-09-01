@@ -9,6 +9,7 @@ export const vehicleSchema = z.object({
   color: z.string().nullable().optional(),
   type: vehicleTypeSchema.default("caminhao"),
   cooperativeId: z.string().uuid().nullable().optional(),
+  loanedToCooperativeId: z.string().uuid().nullable().optional(),
   active: z.boolean().default(true),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
@@ -24,6 +25,20 @@ export const createVehicleSchema = z.object({
 })
 
 export const updateVehicleSchema = createVehicleSchema.partial()
+
+export const loanVehicleSchema = z.object({
+  cooperativeId: z.string().uuid(),
+  confirmUnlink: z.boolean().optional(),
+})
+
+export const endLoanSchema = z.object({
+  confirmUnlink: z.boolean().optional(),
+})
+
+export const routeConflictSchema = z.object({
+  message: z.string(),
+  routes: z.array(z.object({ id: z.string().uuid(), label: z.string() })),
+})
 
 export const vehiclePositionSchema = z.object({
   id: z.string().uuid(),

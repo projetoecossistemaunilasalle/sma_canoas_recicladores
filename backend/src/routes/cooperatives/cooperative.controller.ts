@@ -11,10 +11,7 @@ export class CooperativeController {
       const coops = await service.findAll()
       return reply.send(coops)
     }
-    // Citizens aren't tied to a single cooperative (cooperativeId is always
-    // null for them) — they see the full directory of active cooperatives,
-    // unlike cooperative_admin below which stays scoped to its own one.
-    if (user.role === "user") {
+    if (user.role === "user" || user.role === "cooperative_admin") {
       const coops = await service.findAll()
       return reply.send(coops.filter((c) => c.active))
     }

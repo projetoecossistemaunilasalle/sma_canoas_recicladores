@@ -4,6 +4,7 @@ import { getToken } from "@/lib/session";
 import { getCurrentUser } from "@/lib/auth";
 import { getVehicles, getCooperatives } from "@/lib/data";
 import { deleteVehicleAction } from "./actions";
+import { VehicleLoanControl } from "./vehicle-loan-control";
 import { vehicleColorHex, vehicleColorLabel, vehicleTypeIcon, vehicleTypeLabel } from "@/lib/vehicle-options";
 
 export default async function VehiclesListPage({
@@ -20,7 +21,7 @@ export default async function VehiclesListPage({
 
   const [vehicles, cooperatives] = await Promise.all([
     getVehicles(token),
-    user.role === "admin" ? getCooperatives(token) : Promise.resolve([]),
+    user.role === "admin" || user.role === "cooperative_admin" ? getCooperatives(token) : Promise.resolve([]),
   ]);
   const cooperativeById = new Map(cooperatives.map((c) => [c.id, c]));
 
@@ -60,6 +61,14 @@ export default async function VehiclesListPage({
             const cooperative = vehicle.cooperativeId
               ? cooperativeById.get(vehicle.cooperativeId)
               : undefined;
+            const borrowerCoop = vehicle.loanedToCooperativeId
+              ? cooperativeById.get(vehicle.loanedToCooperativeId)
+              : undefined;
+            const isOwner = user.role === "admin" || vehicle.cooperativeId === user.cooperativeId;
+            const isBorrowedByViewer =
+              user.role === "cooperative_admin" && !isOwner && vehicle.loanedToCooperativeId === user.cooperativeId;
+            const lendTargets = cooperatives.filter((c) => c.active && c.id !== vehicle.cooperativeId);
+
             return (
               <div
                 key={vehicle.id}
@@ -84,6 +93,22 @@ export default async function VehiclesListPage({
                     {vehicleColorLabel(vehicle.color) ? ` · ${vehicleColorLabel(vehicle.color)}` : ""}
                     {cooperative ? ` · ${cooperative.name}` : ""}
                   </p>
+                  {isOwner && vehicle.loanedToCooperativeId ? (
+                    <p className="text-label-lg text-tertiary flex items-center gap-1 mt-1">
+                      <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                        sync_alt
+                      </span>
+                      Emprestado para {borrowerCoop?.name ?? "outra cooperativa"}
+                    </p>
+                  ) : null}
+                  {isBorrowedByViewer ? (
+                    <p className="text-label-lg text-tertiary flex items-center gap-1 mt-1">
+                      <span className="material-symbols-outlined text-[16px]" aria-hidden="true">
+                        sync_alt
+                      </span>
+                      Emprestado por {cooperative?.name ?? "outra cooperativa"}
+                    </p>
+                  ) : null}
                 </div>
                 <span
                   className={`text-[10px] uppercase px-2 py-0.5 rounded-full shrink-0 ${
@@ -94,25 +119,32 @@ export default async function VehiclesListPage({
                 >
                   {vehicle.active ? "Ativo" : "Inativo"}
                 </span>
-                <div className="flex items-center gap-1 shrink-0">
-                  <Link
-                    className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
-                    href={`/dashboard/vehicles/${vehicle.id}/edit`}
-                    aria-label="Editar"
-                    title="Editar"
-                  >
-                    <span className="material-symbols-outlined">edit</span>
-                  </Link>
-                  <form action={deleteVehicleAction.bind(null, vehicle.id)}>
-                    <button
-                      className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container rounded-full transition-colors"
-                      type="submit"
-                      aria-label="Excluir"
-                      title="Excluir"
-                    >
-                      <span className="material-symbols-outlined">delete</span>
-                    </button>
-                  </form>
+                <div className="flex items-center gap-1 shrink-0 flex-wrap justify-end">
+                  {isOwner ? (
+                    <VehicleLoanControl vehicle={vehicle} lendTargets={lendTargets} borrowerName={borrowerCoop?.name} />
+                  ) : null}
+                  {isOwner ? (
+                    <>
+                      <Link
+                        className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
+                        href={`/dashboard/vehicles/${vehicle.id}/edit`}
+                        aria-label="Editar"
+                        title="Editar"
+                      >
+                        <span className="material-symbols-outlined">edit</span>
+                      </Link>
+                      <form action={deleteVehicleAction.bind(null, vehicle.id)}>
+                        <button
+                          className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container rounded-full transition-colors"
+                          type="submit"
+                          aria-label="Excluir"
+                          title="Excluir"
+                        >
+                          <span className="material-symbols-outlined">delete</span>
+                        </button>
+                      </form>
+                    </>
+                  ) : null}
                 </div>
               </div>
             );

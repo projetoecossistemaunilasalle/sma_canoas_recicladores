@@ -77,4 +77,34 @@ export class VehicleController {
     if (!eta) return reply.status(404).send({ message: "Vehicle not found or has no positions" })
     return reply.send(eta)
   }
+
+  async loan(request: FastifyRequest<{ Params: { id: string }; Body: { cooperativeId: string; confirmUnlink?: boolean } }>, reply: FastifyReply) {
+    const filter = getCooperativeFilter(request)
+    const result = await service.loanTo(request.params.id, request.body.cooperativeId, request.body.confirmUnlink ?? false, filter)
+    switch (result.error) {
+      case "not_found":
+        return reply.status(404).send({ message: "Vehicle not found" })
+      case "same_cooperative":
+        return reply.status(400).send({ message: "O veículo já pertence a essa cooperativa." })
+      case "already_loaned":
+        return reply.status(400).send({ message: "Este veículo já está emprestado. Encerre o empréstimo atual antes de emprestá-lo para outra cooperativa." })
+      case "route_conflict":
+        return reply.status(409).send({ message: "Este veículo está vinculado a uma rota ativa.", routes: result.routes })
+    }
+    return reply.send(result.vehicle)
+  }
+
+  async endLoan(request: FastifyRequest<{ Params: { id: string }; Body: { confirmUnlink?: boolean } }>, reply: FastifyReply) {
+    const filter = getCooperativeFilter(request)
+    const result = await service.returnLoan(request.params.id, request.body.confirmUnlink ?? false, filter)
+    switch (result.error) {
+      case "not_found":
+        return reply.status(404).send({ message: "Vehicle not found" })
+      case "not_loaned":
+        return reply.status(400).send({ message: "Este veículo não está emprestado." })
+      case "route_conflict":
+        return reply.status(409).send({ message: "Este veículo está vinculado a uma rota ativa na cooperativa que o pegou emprestado.", routes: result.routes })
+    }
+    return reply.send(result.vehicle)
+  }
 }

@@ -74,6 +74,7 @@ export const vehicles = pgTable("vehicles", {
   color: text("color"),
   type: text("type").notNull().default("caminhao"), // 'caminhao' | 'bicicleta'
   cooperativeId: uuid("cooperative_id").references(() => cooperatives.id),
+  loanedToCooperativeId: uuid("loaned_to_cooperative_id").references(() => cooperatives.id),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
