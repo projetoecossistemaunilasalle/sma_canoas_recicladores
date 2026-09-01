@@ -152,23 +152,22 @@ export class RouteService {
       const to = stopMap.get(stopStreetIds[i + 1])!
 
       if (from.target !== to.source) {
+        // pgr_dijkstra's row semantics are node[i] --edge[i]--> node[i+1] —
+        // edge[i] starts at THIS row's own node, not the previous row's
+        // (a LAG(node) here would be off by one and get every edge's
+        // direction backwards, first one included).
         const legResult = await db.execute<DijkstraLegRow>(sql`
-          WITH path AS (
-            SELECT seq, node, edge, cost,
-                   LAG(node) OVER (ORDER BY seq) AS prev_node
-            FROM pgr_dijkstra(
-              'SELECT id, source, target, cost, reverse_cost FROM streets',
-              ${from.target}::bigint, ${to.source}::bigint, directed := true
-            )
-            WHERE edge <> -1
-          )
           SELECT
             p.edge::integer AS street_id,
-            CASE WHEN s.source = p.prev_node THEN 'forward' ELSE 'reverse' END AS direction,
+            CASE WHEN s.source = p.node THEN 'forward' ELSE 'reverse' END AS direction,
             s.length_km AS distance_km,
             p.cost AS duration_seconds
-          FROM path p
+          FROM pgr_dijkstra(
+            'SELECT id, source, target, cost, reverse_cost FROM streets',
+            ${from.target}::bigint, ${to.source}::bigint, directed := true
+          ) p
           JOIN streets s ON s.id = p.edge
+          WHERE p.edge <> -1
           ORDER BY p.seq
         `)
         if (legResult.rows.length === 0) {

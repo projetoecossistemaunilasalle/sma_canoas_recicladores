@@ -56,8 +56,12 @@ export class PublicTrackingService {
   }
 
   async checkAddress(lat: number, lng: number) {
-    const street = await this.findNearestStreet(lat, lng)
+    const nearestAny = await this.findNearestStreet(lat, lng)
+    const servedStreet = nearestAny ? await this.resolveServedStreet(lat, lng, nearestAny) : null
+    const street = servedStreet ?? nearestAny
     if (!street) return { status: "no_route" as const }
+
+    if (!servedStreet) return { status: "no_route" as const, street: street.name }
 
     const { today, nowTime } = await this.getTodayContext()
     const schedule = await this.findScheduleForStreet(street.id, today)
@@ -85,7 +89,7 @@ export class PublicTrackingService {
     // Window has started today — delegate the live "how close is it" math to
     // the same DB function the authenticated ETA endpoint uses, rather than
     // re-deriving it.
-    const eta = await vehicleService.getEta(schedule.vehicleId, lat, lng)
+    const eta = await vehicleService.getEta(schedule.vehicleId, lat, lng, street.id)
 
     if (eta && (eta.status === "chegando" || eta.status === "na_rua")) {
       const position = await vehicleService.findLatestPosition(schedule.vehicleId)
@@ -98,6 +102,8 @@ export class PublicTrackingService {
         distanceKm: eta.distanceKm,
         vehicle: schedule.vehicle,
         position: position ? parsePosition(position) : null,
+        path: eta.path,
+        stops: eta.stops,
       }
     }
 
@@ -127,6 +133,73 @@ export class PublicTrackingService {
     const result = await db.execute<{ id: number; name: string | null }>(
       sql`SELECT id, name FROM streets ORDER BY geom <-> ${point} LIMIT 1`
     )
+    return result.rows[0] ?? null
+  }
+
+  // Resolves the street segment that should represent this address for
+  // schedule/route lookups. If the segment literally nearest the address is
+  // itself served, use it directly. Otherwise, OSM sometimes splits one
+  // continuous street into several short segments (one per intersection) —
+  // the segment right at a corner can be unserved while the street
+  // continues, served, just past that corner. Only treat this as that kind
+  // of corner ambiguity (and bridge to a nearby served segment) when the
+  // address itself sits near one END of its own unserved segment. If it
+  // sits solidly mid-block, the street is genuinely not served there, even
+  // if a same-named block elsewhere is — bridging on raw distance from the
+  // address instead of this let a real ~230m-long unserved stretch of Rua
+  // Charrua (address sitting mid-block, 115m from the nearest served
+  // neighboring block) get wrongly reported as having collection.
+  private async resolveServedStreet(
+    lat: number,
+    lng: number,
+    nearestAny: { id: number; name: string | null }
+  ): Promise<{ id: number; name: string | null } | null> {
+    const own = await db.execute<{ id: number; name: string | null }>(sql`
+      SELECT s.id, s.name FROM streets s
+      JOIN route_streets rs ON rs.street_id = s.id
+      WHERE s.id = ${nearestAny.id}
+      LIMIT 1
+    `)
+    if (own.rows[0]) return own.rows[0]
+
+    const cornerRadiusMeters = 40
+    const point = sql`ST_SetSRID(ST_MakePoint(${lng}::double precision, ${lat}::double precision), 4326)`
+    const corner = await db.execute<{ near_end: boolean }>(sql`
+      SELECT LEAST(loc.f, 1 - loc.f) * ST_Length(s.geom::geography) < ${cornerRadiusMeters} AS near_end
+      FROM streets s
+      CROSS JOIN LATERAL (SELECT ST_LineLocatePoint(s.geom, ${point}) AS f) loc
+      WHERE s.id = ${nearestAny.id}
+    `)
+    if (!corner.rows[0]?.near_end) return null
+
+    return (
+      (nearestAny.name ? await this.findNearestServedStreet(lat, lng, nearestAny.name) : null) ??
+      (await this.findNearestServedStreet(lat, lng))
+    )
+  }
+
+  // Same idea as findNearestStreet, but only considers segments that are
+  // actually part of some route_streets row. Only called from
+  // resolveServedStreet once a corner-ambiguity situation is already
+  // confirmed, so a generous radius here just widens which neighboring
+  // segment gets picked, not whether bridging happens at all.
+  private async findNearestServedStreet(
+    lat: number,
+    lng: number,
+    name?: string
+  ): Promise<{ id: number; name: string | null } | null> {
+    const point = sql`ST_SetSRID(ST_MakePoint(${lng}::double precision, ${lat}::double precision), 4326)`
+    const maxDistanceMeters = 200
+    const nameFilter = name ? sql`AND s.name = ${name}` : sql``
+    const result = await db.execute<{ id: number; name: string | null }>(sql`
+      SELECT s.id, s.name
+      FROM streets s
+      JOIN route_streets rs ON rs.street_id = s.id
+      WHERE ST_DWithin(s.geom::geography, ${point}::geography, ${maxDistanceMeters})
+        ${nameFilter}
+      ORDER BY s.geom <-> ${point}
+      LIMIT 1
+    `)
     return result.rows[0] ?? null
   }
 

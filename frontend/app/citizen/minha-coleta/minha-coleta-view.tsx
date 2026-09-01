@@ -59,6 +59,8 @@ export function MinhaColeta({ user }: { user: CurrentUser }) {
   const truckPosition = result?.status === "arriving" ? (livePosition ?? result.position) : null;
   const vehicle = vehicleFromResult(result);
   const addressPosition = hasAddress ? { lat: user.addressLat as number, lng: user.addressLng as number } : null;
+  const path = result?.status === "arriving" ? result.path : undefined;
+  const stops = result?.status === "arriving" ? result.stops : undefined;
 
   async function handleToggleNotify() {
     setNotifyError(null);
@@ -108,6 +110,8 @@ export function MinhaColeta({ user }: { user: CurrentUser }) {
         followTruck={followTruck}
         onManualPan={() => setFollowTruck(false)}
         onResumeFollow={() => setFollowTruck(true)}
+        path={path}
+        stops={stops}
       />
 
       <div className="absolute top-4 right-4 z-[900] flex flex-col items-end gap-2">

@@ -49,4 +49,6 @@ export const etaSchema = z.object({
   streetsRemaining: z.number(),
   currentStreet: z.string().nullable(),
   citizenStreet: z.string().nullable(),
+  path: z.array(z.object({ lat: z.number(), lng: z.number() })),
+  stops: z.array(z.object({ streetId: z.number(), name: z.string().nullable(), lat: z.number(), lng: z.number() })),
 })

@@ -63,6 +63,8 @@ export function PublicHome() {
 
   const truckPosition = result?.status === "arriving" ? (livePosition ?? result.position) : null;
   const vehicle = vehicleFromResult(result);
+  const path = result?.status === "arriving" ? result.path : undefined;
+  const stops = result?.status === "arriving" ? result.stops : undefined;
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
@@ -74,6 +76,8 @@ export function PublicHome() {
         followTruck={followTruck}
         onManualPan={() => setFollowTruck(false)}
         onResumeFollow={() => setFollowTruck(true)}
+        path={path}
+        stops={stops}
       />
 
       <div className="absolute top-4 left-4 right-4 z-[1000] flex items-start justify-between gap-3 pointer-events-none">

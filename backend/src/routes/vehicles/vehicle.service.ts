@@ -9,6 +9,22 @@ const positionColumns = {
   recordedAt: vehiclePositions.recordedAt,
 }
 
+export interface EtaStop {
+  streetId: number
+  name: string | null
+  lat: number
+  lng: number
+}
+
+// get_eta_following_route() returns the path as GeoJSON text (coordinates
+// are [lng, lat], PostGIS's default order) — flip to {lat,lng} to match the
+// rest of the app's convention (see parseWktPoint in lib/geo.ts).
+function parsePathGeoJson(geojson: string | null): Array<{ lat: number; lng: number }> {
+  if (!geojson) return []
+  const parsed = JSON.parse(geojson) as { type: string; coordinates: [number, number][] }
+  return parsed.coordinates.map(([lng, lat]) => ({ lat, lng }))
+}
+
 export class VehicleService {
   async findAll(filterCooperativeId?: string) {
     if (filterCooperativeId) {
@@ -83,7 +99,7 @@ export class VehicleService {
   // Delegates to get_eta_following_route() (docker/postgres/initdb/005-maps.sql),
   // which walks the vehicle's active route_streets sequence rather than
   // re-running pgRouting on every request.
-  async getEta(vehicleId: string, lat: number, lng: number) {
+  async getEta(vehicleId: string, lat: number, lng: number, citizenStreetId?: number) {
     const result = await db.execute<{
       status: string
       tempo_segundos: number
@@ -92,7 +108,9 @@ export class VehicleService {
       ruas_restantes: number
       rua_atual: string | null
       rua_cidadao: string | null
-    }>(sql`SELECT * FROM get_eta_following_route(${vehicleId}, ${lat}, ${lng})`)
+      path_geojson: string | null
+      stops_json: string | null
+    }>(sql`SELECT * FROM get_eta_following_route(${vehicleId}, ${lat}, ${lng}, ${citizenStreetId ?? null})`)
     const row = result.rows[0]
     if (!row) return null
     return {
@@ -103,6 +121,8 @@ export class VehicleService {
       streetsRemaining: row.ruas_restantes,
       currentStreet: row.rua_atual,
       citizenStreet: row.rua_cidadao,
+      path: parsePathGeoJson(row.path_geojson),
+      stops: row.stops_json ? (JSON.parse(row.stops_json) as EtaStop[]) : [],
     }
   }
 }

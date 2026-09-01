@@ -29,6 +29,18 @@ const positionSchema = z.object({
   recordedAt: z.date(),
 })
 
+const pathPointSchema = z.object({
+  lat: z.number(),
+  lng: z.number(),
+})
+
+const pathStopSchema = z.object({
+  streetId: z.number(),
+  name: z.string().nullable(),
+  lat: z.number(),
+  lng: z.number(),
+})
+
 export const collectionCheckResultSchema = z.discriminatedUnion("status", [
   z.object({
     status: z.literal("no_route"),
@@ -56,6 +68,8 @@ export const collectionCheckResultSchema = z.discriminatedUnion("status", [
     distanceKm: z.number(),
     vehicle: vehicleSummarySchema,
     position: positionSchema.nullable(),
+    path: z.array(pathPointSchema),
+    stops: z.array(pathStopSchema),
   }),
   z.object({
     status: z.literal("passed"),

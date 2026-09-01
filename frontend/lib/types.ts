@@ -121,6 +121,11 @@ export interface PublicVehiclePosition {
   recordedAt: string;
 }
 
+export interface LatLng {
+  lat: number;
+  lng: number;
+}
+
 export type CollectionCheckResult =
   | { status: "no_route"; street?: string | null }
   | {
@@ -145,6 +150,8 @@ export type CollectionCheckResult =
       distanceKm: number;
       vehicle: PublicVehicleSummary;
       position: PublicVehiclePosition | null;
+      path: LatLng[];
+      stops: { streetId: number; name: string | null; lat: number; lng: number }[];
     }
   | {
       status: "passed";
