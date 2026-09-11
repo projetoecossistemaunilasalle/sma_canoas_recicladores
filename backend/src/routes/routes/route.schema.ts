@@ -1,6 +1,7 @@
 import { z } from "zod"
+import { weekdaySchema } from "../../lib/weekdays"
 
-const dayOfWeek = z.enum(["seg", "ter", "qua", "qui", "sex", "sab", "dom"])
+const dayOfWeek = weekdaySchema
 const shift = z.enum(["manha", "tarde", "noite"])
 // HH:MM or HH:MM:SS
 const timeString = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/)
@@ -19,6 +20,11 @@ export const collectionRouteSchema = z.object({
   startedAt: z.date().nullable().optional(),
   completedAt: z.date().nullable().optional(),
   createdAt: z.date().optional(),
+  // True only while today is a scheduled day AND the current time is inside
+  // that day's shift window — see RouteService.withRunningStatus. Distinct
+  // from `status`, which currently every route sits at "active" forever
+  // (there's no start/stop action), so it can't answer "is it running now".
+  isRunningNow: z.boolean(),
 })
 
 export const createCollectionRouteSchema = z.object({

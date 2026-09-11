@@ -2,7 +2,8 @@ import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { CooperativeController } from "./cooperative.controller"
 import { createCooperativeSchema, updateCooperativeSchema, cooperativeSchema } from "./cooperative.schema"
-import { authenticate, requireRole } from "../../middleware/auth.middleware"
+import { errorResponseSchema, idParamSchema } from "../common.schema"
+import { requireAnyAuthed, requireAdmin, requireStaff } from "../../middleware/auth.middleware"
 
 const controller = new CooperativeController()
 
@@ -10,7 +11,7 @@ export const cooperativeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/cooperatives",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: requireAnyAuthed,
       schema: {
         summary: "List all cooperatives",
         tags: ["Cooperatives"],
@@ -23,12 +24,12 @@ export const cooperativeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/cooperatives/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin", "user")],
+      preHandler: requireAnyAuthed,
       schema: {
         summary: "Get cooperative by ID",
         tags: ["Cooperatives"],
-        params: z.object({ id: z.string().uuid() }),
-        response: { 200: cooperativeSchema, 404: z.object({ message: z.string() }) },
+        params: idParamSchema,
+        response: { 200: cooperativeSchema, 404: errorResponseSchema },
       },
     },
     controller.getById.bind(controller)
@@ -37,7 +38,7 @@ export const cooperativeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/cooperatives",
     {
-      preHandler: [authenticate, requireRole("admin")],
+      preHandler: requireAdmin,
       schema: {
         summary: "Create cooperative",
         tags: ["Cooperatives"],
@@ -51,13 +52,15 @@ export const cooperativeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.put(
     "/cooperatives/:id",
     {
-      preHandler: [authenticate, requireRole("admin")],
+      // A cooperative_admin can edit its own cooperative's info (see
+      // CooperativeController.update's ownership check); "admin" can edit any.
+      preHandler: requireStaff,
       schema: {
         summary: "Update cooperative",
         tags: ["Cooperatives"],
-        params: z.object({ id: z.string().uuid() }),
+        params: idParamSchema,
         body: updateCooperativeSchema,
-        response: { 200: cooperativeSchema, 404: z.object({ message: z.string() }) },
+        response: { 200: cooperativeSchema, 403: errorResponseSchema, 404: errorResponseSchema },
       },
     },
     controller.update.bind(controller)
@@ -66,12 +69,12 @@ export const cooperativeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.delete(
     "/cooperatives/:id",
     {
-      preHandler: [authenticate, requireRole("admin")],
+      preHandler: requireAdmin,
       schema: {
         summary: "Delete cooperative",
         tags: ["Cooperatives"],
-        params: z.object({ id: z.string().uuid() }),
-        response: { 204: z.any(), 404: z.object({ message: z.string() }) },
+        params: idParamSchema,
+        response: { 204: z.any(), 404: errorResponseSchema },
       },
     },
     controller.remove.bind(controller)

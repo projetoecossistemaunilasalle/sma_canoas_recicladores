@@ -11,7 +11,8 @@ import {
   updateProfileSchema,
   pushSubscriptionSchema,
 } from "./user.schema"
-import { authenticate, requireRole } from "../../middleware/auth.middleware"
+import { errorResponseSchema, idParamSchema } from "../common.schema"
+import { requireAuth, requireStaff } from "../../middleware/auth.middleware"
 
 const controller = new UserController()
 
@@ -23,7 +24,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
         summary: "Login",
         tags: ["Auth"],
         body: loginSchema,
-        response: { 200: loginResponseSchema, 401: z.object({ message: z.string() }) },
+        response: { 200: loginResponseSchema, 401: errorResponseSchema },
       },
     },
     controller.login.bind(controller)
@@ -36,7 +37,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
         summary: "Public citizen self-registration",
         tags: ["Auth"],
         body: registerSchema,
-        response: { 201: loginResponseSchema, 409: z.object({ message: z.string() }) },
+        response: { 201: loginResponseSchema, 409: errorResponseSchema },
       },
     },
     controller.register.bind(controller)
@@ -45,11 +46,11 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/me",
     {
-      preHandler: [authenticate],
+      preHandler: requireAuth,
       schema: {
         summary: "Get current user",
         tags: ["Users"],
-        response: { 200: userSchema, 404: z.object({ message: z.string() }) },
+        response: { 200: userSchema, 404: errorResponseSchema },
       },
     },
     controller.me.bind(controller)
@@ -58,12 +59,12 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.put(
     "/me",
     {
-      preHandler: [authenticate],
+      preHandler: requireAuth,
       schema: {
         summary: "Update current user's own profile",
         tags: ["Users"],
         body: updateProfileSchema,
-        response: { 200: userSchema, 404: z.object({ message: z.string() }) },
+        response: { 200: userSchema, 404: errorResponseSchema },
       },
     },
     controller.updateMe.bind(controller)
@@ -72,7 +73,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/me/push-subscription",
     {
-      preHandler: [authenticate],
+      preHandler: requireAuth,
       schema: {
         summary: "Save a Web Push subscription for the current user",
         tags: ["Users"],
@@ -86,7 +87,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.delete(
     "/me/push-subscription",
     {
-      preHandler: [authenticate],
+      preHandler: requireAuth,
       schema: {
         summary: "Remove a Web Push subscription for the current user",
         tags: ["Users"],
@@ -100,7 +101,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/users",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "List users",
         tags: ["Users"],
@@ -113,12 +114,12 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/users/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Get user by ID",
         tags: ["Users"],
-        params: z.object({ id: z.string().uuid() }),
-        response: { 200: userSchema, 404: z.object({ message: z.string() }) },
+        params: idParamSchema,
+        response: { 200: userSchema, 404: errorResponseSchema },
       },
     },
     controller.getById.bind(controller)
@@ -127,7 +128,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/users",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Create user",
         tags: ["Users"],
@@ -141,13 +142,13 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.put(
     "/users/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Update user",
         tags: ["Users"],
-        params: z.object({ id: z.string().uuid() }),
+        params: idParamSchema,
         body: updateUserSchema,
-        response: { 200: userSchema, 404: z.object({ message: z.string() }) },
+        response: { 200: userSchema, 404: errorResponseSchema },
       },
     },
     controller.update.bind(controller)
@@ -156,12 +157,12 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   server.delete(
     "/users/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Delete user",
         tags: ["Users"],
-        params: z.object({ id: z.string().uuid() }),
-        response: { 204: z.any(), 404: z.object({ message: z.string() }) },
+        params: idParamSchema,
+        response: { 204: z.any(), 404: errorResponseSchema },
       },
     },
     controller.remove.bind(controller)

@@ -3,17 +3,23 @@ import type { z } from "zod"
 import { RouteService } from "./route.service"
 import { StreetService } from "../streets/street.service"
 import type { JwtPayload } from "../../lib/jwt"
+import { getCooperativeFilter, scopeCooperativeId } from "../../middleware/auth.middleware"
 import type { createCollectionRouteSchema, updateCollectionRouteSchema } from "./route.schema"
 
 const service = new RouteService()
 const streetService = new StreetService()
 
-function getCooperativeFilter(request: FastifyRequest): string | undefined {
-  const user = request.user as JwtPayload
-  if (user.role === "cooperative_admin" && user.cooperativeId) {
-    return user.cooperativeId
+// The "does this route belong to the caller's cooperative" check every
+// route-streets handler below repeats before touching a :routeId — sends
+// the 404 itself and reports whether the caller should stop.
+async function assertRouteAccessible(routeId: string, filter: string | undefined, reply: FastifyReply): Promise<boolean> {
+  if (!filter) return true
+  const route = await service.findById(routeId, filter)
+  if (!route) {
+    reply.status(404).send({ message: "Route not found" })
+    return false
   }
-  return undefined
+  return true
 }
 
 export class RouteController {
@@ -33,12 +39,7 @@ export class RouteController {
 
   async create(request: FastifyRequest<{ Body: z.infer<typeof createCollectionRouteSchema> }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
-    let cooperativeId: string | undefined = undefined
-
-    if (currentUser.role === "cooperative_admin" && currentUser.cooperativeId) {
-      cooperativeId = currentUser.cooperativeId
-    }
-
+    const cooperativeId = scopeCooperativeId(currentUser, undefined)
     const r = await service.create({ ...request.body, cooperativeId })
     return reply.status(201).send(r)
   }
@@ -60,41 +61,28 @@ export class RouteController {
   // ==================== ROUTE STREETS ====================
   async listStreets(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
-    // Verifica se a rota pertence à cooperativa do admin
-    if (filter) {
-      const route = await service.findById(request.params.id, filter)
-      if (!route) return reply.status(404).send({ message: "Route not found" })
-    }
+    if (!(await assertRouteAccessible(request.params.id, filter, reply))) return
     const streets = await service.findStreetsByRoute(request.params.id)
     return reply.send(streets)
   }
 
   async listStops(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
-    if (filter) {
-      const route = await service.findById(request.params.id, filter)
-      if (!route) return reply.status(404).send({ message: "Route not found" })
-    }
+    if (!(await assertRouteAccessible(request.params.id, filter, reply))) return
     const stops = await service.findStopStreets(request.params.id)
     return reply.send(stops)
   }
 
   async addStreet(request: FastifyRequest<{ Params: { id: string }; Body: { streetId: number; stopOrder: number; direction?: string; distanceFromPreviousKm?: number; durationFromPreviousSeconds?: number } }>, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
-    if (filter) {
-      const route = await service.findById(request.params.id, filter)
-      if (!route) return reply.status(404).send({ message: "Route not found" })
-    }
+    if (!(await assertRouteAccessible(request.params.id, filter, reply))) return
     const rs = await service.addStreetToRoute({ ...request.body, routeId: request.params.id })
     return reply.status(201).send(rs)
   }
 
   async updateStreet(request: FastifyRequest<{ Params: { routeId: string; streetId: string }; Body: Partial<{ streetId: number; stopOrder: number; direction: string; distanceFromPreviousKm: number; durationFromPreviousSeconds: number }> }>, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
-    if (filter) {
-      const route = await service.findById(request.params.routeId, filter)
-      if (!route) return reply.status(404).send({ message: "Route not found" })
-    }
+    if (!(await assertRouteAccessible(request.params.routeId, filter, reply))) return
     const rs = await service.updateRouteStreet(request.params.streetId, request.body)
     if (!rs) return reply.status(404).send({ message: "Route street not found" })
     return reply.send(rs)
@@ -102,10 +90,7 @@ export class RouteController {
 
   async removeStreet(request: FastifyRequest<{ Params: { routeId: string; streetId: string } }>, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
-    if (filter) {
-      const route = await service.findById(request.params.routeId, filter)
-      if (!route) return reply.status(404).send({ message: "Route not found" })
-    }
+    if (!(await assertRouteAccessible(request.params.routeId, filter, reply))) return
     const rs = await service.removeRouteStreet(request.params.streetId)
     if (!rs) return reply.status(404).send({ message: "Route street not found" })
     return reply.status(204).send()
@@ -113,10 +98,7 @@ export class RouteController {
 
   async plan(request: FastifyRequest<{ Params: { id: string }; Body: { streetIds: number[] } }>, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
-    if (filter) {
-      const route = await service.findById(request.params.id, filter)
-      if (!route) return reply.status(404).send({ message: "Route not found" })
-    }
+    if (!(await assertRouteAccessible(request.params.id, filter, reply))) return
     try {
       const streets = await service.planRoute(request.params.id, request.body.streetIds)
       return reply.send(streets)

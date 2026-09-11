@@ -44,7 +44,6 @@ function hexLuminance(hex: string): number {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b;
 }
 
-// Light marker fills (branco, amarelo, prata...) need a dark glyph to stay readable.
 export function vehicleIconTextColor(color: string | null | undefined): string {
   return hexLuminance(vehicleColorHex(color)) > 0.6 ? "#1F1F1F" : "#FFFFFF";
 }

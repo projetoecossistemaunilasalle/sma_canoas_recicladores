@@ -41,6 +41,6 @@ Thumbs.db
 # Test artifacts
 *.tsbuildinfo
 
-# Raw OSM data extracts (regenerate via backend/data/README.md)
-backend/data/*.osm
+# Raw OSM data extracts, other than the committed street-network snapshot
+# (see backend/data/README.md to regenerate it)
 backend/data/*.pbf

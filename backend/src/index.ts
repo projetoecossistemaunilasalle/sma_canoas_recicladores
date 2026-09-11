@@ -15,12 +15,15 @@ import { routeRoutes } from './routes/routes/route.routes'
 import { vehicleRoutes } from './routes/vehicles/vehicle.routes'
 import { streetRoutes } from './routes/streets/street.routes'
 import { publicTrackingRoutes } from './routes/public-tracking/public-tracking.routes'
+import { announcementRoutes } from './routes/announcements/announcement.routes'
 import { wsRoutes } from './routes/ws/ws.routes'
 import { startMultiportalSync } from './integrations/multiportal-sync'
 import { startProximityNotifier } from './integrations/proximity-notifier'
 
 
-const server = fastify()
+// Fastify defaults to a 1MB request body cap — too small for announcements'
+// base64-encoded images (up to ~1.37MB each, up to 3 per post).
+const server = fastify({ bodyLimit: 6 * 1024 * 1024 })
 
 server.setValidatorCompiler(validatorCompiler)
 server.setSerializerCompiler(serializerCompiler)
@@ -57,6 +60,7 @@ server.register(routeRoutes)
 server.register(vehicleRoutes)
 server.register(streetRoutes)
 server.register(publicTrackingRoutes)
+server.register(announcementRoutes)
 server.register(wsRoutes)
 
 const port = Number(process.env.PORT) || 3333

@@ -7,6 +7,7 @@ const TABS = [
   { href: "/citizen", label: "Início", icon: "home" },
   { href: "/citizen/minha-coleta", label: "Rotas", icon: "local_shipping" },
   { href: "/citizen/educacao", label: "Educação", icon: "eco" },
+  { href: "/citizen/avisos", label: "Avisos", icon: "campaign" },
   { href: "/citizen/perfil", label: "Perfil", icon: "person" },
 ];
 
@@ -22,11 +23,11 @@ export function CitizenTabBar() {
             <Link
               key={tab.href}
               href={tab.href}
-              className={`flex-1 flex flex-col items-center gap-1 py-3 text-label-lg transition-colors ${
+              className={`flex-1 flex flex-col items-center gap-1 py-3 text-[11px] leading-[14px] font-semibold transition-colors ${
                 active ? "text-primary" : "text-on-surface-variant"
               }`}
             >
-              <span className="material-symbols-outlined text-[24px]">{tab.icon}</span>
+              <span className="material-symbols-outlined text-[20px]">{tab.icon}</span>
               {tab.label}
             </Link>
           );

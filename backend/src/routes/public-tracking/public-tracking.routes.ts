@@ -6,6 +6,7 @@ import {
   geocodeResultSchema,
   collectionCheckQuerySchema,
   collectionCheckResultSchema,
+  publicCooperativeSchema,
 } from "./public-tracking.schema"
 
 const controller = new PublicTrackingController()
@@ -38,5 +39,17 @@ export const publicTrackingRoutes: FastifyPluginAsyncZod = async (server) => {
       },
     },
     controller.collectionCheck.bind(controller)
+  )
+
+  server.get(
+    "/public/cooperatives",
+    {
+      schema: {
+        summary: "List active cooperatives with a map pin location",
+        tags: ["Public"],
+        response: { 200: z.array(publicCooperativeSchema) },
+      },
+    },
+    controller.cooperatives.bind(controller)
   )
 }

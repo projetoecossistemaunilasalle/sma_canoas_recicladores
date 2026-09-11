@@ -1,66 +1,28 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import PublicMapClient from "@/app/public-map-client";
 import { CollectionPanel } from "@/app/collection-panel";
-import { checkCollectionForAddress } from "@/lib/public-api";
-import { useVehicleTracking } from "@/lib/use-vehicle-tracking";
+import { useCollectionTracking } from "@/lib/use-collection-tracking";
 import { subscribeToPush, unsubscribeFromPush } from "@/lib/push";
-import type { CollectionCheckResult, CurrentUser, PublicVehicleSummary } from "@/lib/types";
+import { updateProfileAction } from "../actions";
+import type { CurrentUser, Cooperative } from "@/lib/types";
 
-// Same 30s "catch a status transition" poll as the public home
-// (frontend/app/public-home.tsx) — kept in sync intentionally.
-const POLL_INTERVAL_MS = 30_000;
-
-function vehicleFromResult(result: CollectionCheckResult | null): PublicVehicleSummary | null {
-  if (!result || result.status === "no_route") return null;
-  return result.vehicle;
-}
-
-export function MinhaColeta({ user }: { user: CurrentUser }) {
+export function MinhaColeta({ user, cooperatives = [] }: { user: CurrentUser; cooperatives?: Cooperative[] }) {
   const router = useRouter();
   const hasAddress = user.addressLat != null && user.addressLng != null;
 
-  const [result, setResult] = useState<CollectionCheckResult | null>(null);
   const [followTruck, setFollowTruck] = useState(true);
   const [notifyOn, setNotifyOn] = useState(user.notifyProximity);
   const [notifyPending, setNotifyPending] = useState(false);
   const [notifyError, setNotifyError] = useState<string | null>(null);
 
-  const runCheck = useCallback(async () => {
-    if (user.addressLat == null || user.addressLng == null) return;
-    try {
-      const next = await checkCollectionForAddress(user.addressLat, user.addressLng);
-      setResult(next);
-    } catch {
-      // keep last known result on a transient failure
-    }
-  }, [user.addressLat, user.addressLng]);
-
-  useEffect(() => {
-    if (user.addressLat == null || user.addressLng == null) return;
-    checkCollectionForAddress(user.addressLat, user.addressLng)
-      .then(setResult)
-      .catch(() => {
-        // keep last known result (null on first load) on a transient failure
-      });
-  }, [user.addressLat, user.addressLng]);
-
-  useEffect(() => {
-    if (!result) return;
-    if (result.status !== "scheduled_today" && result.status !== "arriving") return;
-    const interval = setInterval(runCheck, POLL_INTERVAL_MS);
-    return () => clearInterval(interval);
-  }, [result, runCheck]);
-
-  const trackedVehicleId = result?.status === "arriving" ? result.vehicle.id : null;
-  const { position: livePosition, heading } = useVehicleTracking(trackedVehicleId);
-  const truckPosition = result?.status === "arriving" ? (livePosition ?? result.position) : null;
-  const vehicle = vehicleFromResult(result);
+  const { result, truckPosition, heading, vehicle, path, stops } = useCollectionTracking(
+    user.addressLat,
+    user.addressLng
+  );
   const addressPosition = hasAddress ? { lat: user.addressLat as number, lng: user.addressLng as number } : null;
-  const path = result?.status === "arriving" ? result.path : undefined;
-  const stops = result?.status === "arriving" ? result.stops : undefined;
 
   async function handleToggleNotify() {
     setNotifyError(null);
@@ -68,10 +30,12 @@ export function MinhaColeta({ user }: { user: CurrentUser }) {
     try {
       if (notifyOn) {
         await unsubscribeFromPush();
+        await updateProfileAction({ notifyProximity: false });
         setNotifyOn(false);
       } else {
         const ok = await subscribeToPush();
         if (ok) {
+          await updateProfileAction({ notifyProximity: true });
           setNotifyOn(true);
         } else {
           setNotifyError("Ative as notificações do navegador pra usar esse recurso.");
@@ -84,7 +48,7 @@ export function MinhaColeta({ user }: { user: CurrentUser }) {
 
   if (!hasAddress) {
     return (
-      <main className="max-w-2xl mx-auto px-4 py-8">
+      <main className="max-w-2xl mx-auto px-4 py-8 pb-28">
         <h1 className="text-display-lg text-on-surface mb-2">Minha Coleta</h1>
         <p className="text-body-lg text-on-surface-variant mb-6">
           Cadastre seu endereço no Perfil pra acompanhar a coleta na sua rua.
@@ -101,7 +65,7 @@ export function MinhaColeta({ user }: { user: CurrentUser }) {
   }
 
   return (
-    <div className="relative w-full h-screen">
+    <div className="relative w-full h-screen pb-20">
       <PublicMapClient
         addressPosition={addressPosition}
         truckPosition={truckPosition}
@@ -112,6 +76,15 @@ export function MinhaColeta({ user }: { user: CurrentUser }) {
         onResumeFollow={() => setFollowTruck(true)}
         path={path}
         stops={stops}
+        cooperatives={cooperatives.map((c) => ({
+          id: c.id,
+          name: c.name,
+          address: c.address,
+          phone: c.phone,
+          instagram: c.instagram,
+          lat: c.lat as number,
+          lng: c.lng as number,
+        }))}
       />
 
       <div className="absolute top-4 right-4 z-[900] flex flex-col items-end gap-2">

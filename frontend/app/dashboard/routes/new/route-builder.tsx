@@ -3,6 +3,7 @@
 import { useActionState, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import { pickStreetAction, previewRouteAction, createAndPlanRoute, type CreateRouteState } from "../actions";
+import { DAYS_OF_WEEK, SHIFTS } from "@/lib/format";
 import type { Street, Vehicle, DayOfWeek, Shift, RoutePreviewSegment } from "@/lib/types";
 
 const RouteMap = dynamic(() => import("../route-map").then((m) => m.RouteMap), {
@@ -13,22 +14,6 @@ const RouteMap = dynamic(() => import("../route-map").then((m) => m.RouteMap), {
 });
 
 const initialState: CreateRouteState = {};
-
-const DAYS: { value: DayOfWeek; label: string }[] = [
-  { value: "seg", label: "Seg" },
-  { value: "ter", label: "Ter" },
-  { value: "qua", label: "Qua" },
-  { value: "qui", label: "Qui" },
-  { value: "sex", label: "Sex" },
-  { value: "sab", label: "Sáb" },
-  { value: "dom", label: "Dom" },
-];
-
-const SHIFTS: { value: Shift; label: string }[] = [
-  { value: "manha", label: "Manhã" },
-  { value: "tarde", label: "Tarde" },
-  { value: "noite", label: "Noite" },
-];
 
 export interface RouteBuilderInitial {
   routeId?: string;
@@ -165,7 +150,7 @@ export function RouteBuilder({
             ? "Clique e arraste sobre as ruas, na ordem da coleta. Toque no botão para navegar/afastar o mapa."
             : "Modo navegação: arraste para mover o mapa. Toque no botão para voltar a desenhar."}
         </p>
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-h-[50vh] lg:min-h-0">
           <RouteMap
             pathGeoms={previewSegments.map((s) => s.geom)}
             stopGeoms={stops.map((s) => s.geom)}
@@ -206,7 +191,7 @@ export function RouteBuilder({
         <div className="flex flex-col gap-2">
           <span className="text-label-lg text-on-surface-variant">Dias da semana</span>
           <div className="flex flex-wrap gap-2">
-            {DAYS.map((day) => (
+            {DAYS_OF_WEEK.map((day) => (
               <button
                 key={day.value}
                 className={`px-3 h-9 rounded-full text-label-lg transition-colors ${
@@ -276,7 +261,7 @@ export function RouteBuilder({
                     {street.name ?? `Rua #${street.id}`}
                   </span>
                   <button
-                    className="text-on-surface-variant hover:text-error transition-colors"
+                    className="flex items-center justify-center w-10 h-10 -m-1 rounded-full text-on-surface-variant hover:text-error hover:bg-error-container/40 transition-colors shrink-0"
                     onClick={() => removeStop(i)}
                     type="button"
                     aria-label="Remover"

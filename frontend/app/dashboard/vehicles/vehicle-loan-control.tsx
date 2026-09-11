@@ -64,7 +64,7 @@ export function VehicleLoanControl({
   return (
     <>
       <button
-        className={`flex items-center gap-1.5 px-3 h-9 rounded-full text-label-lg transition-colors shrink-0 ${
+        className={`flex items-center gap-1.5 px-3 h-10 rounded-full text-label-lg transition-colors shrink-0 ${
           isLoaned
             ? "bg-error-container text-on-error-container hover:opacity-90"
             : "bg-secondary-container text-on-secondary-container hover:opacity-90"

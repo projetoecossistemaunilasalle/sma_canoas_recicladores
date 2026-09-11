@@ -1,6 +1,6 @@
 # data/
 
-`canoas.osm` is a raw OpenStreetMap extract of the Canoas, RS street network — not committed to git (regenerable, ~4MB). Consumed by `pnpm streets:import`.
+`canoas.osm` is a raw OpenStreetMap extract of the Canoas, RS street network — committed to git (~4MB) so deploy builds don't depend on the Overpass API being reachable. Consumed by `pnpm streets:import`.
 
 To (re)download it, run from the repo root:
 

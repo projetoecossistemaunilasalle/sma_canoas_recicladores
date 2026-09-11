@@ -1,14 +1,8 @@
-import { getToken } from "@/lib/session";
-import { getCurrentUser } from "@/lib/auth";
-import { redirectForRole } from "@/lib/redirect-for-role";
+import { redirectIfAuthenticated } from "@/lib/auth";
 import { LoginForm } from "./login-form";
 
 export default async function LoginPage() {
-  const token = await getToken();
-  if (token) {
-    const user = await getCurrentUser(token);
-    if (user) redirectForRole(user.role);
-  }
+  await redirectIfAuthenticated();
 
   return (
     <main className="min-h-screen flex items-center justify-center bg-background p-4">
@@ -19,7 +13,7 @@ export default async function LoginPage() {
               recycling
             </span>
             <span className="text-headline-lg text-primary tracking-tight">
-              Canoas Coleta+
+              Canoas Recicla com a Gente
             </span>
           </div>
           <h1 className="text-headline-lg text-on-surface mb-2">

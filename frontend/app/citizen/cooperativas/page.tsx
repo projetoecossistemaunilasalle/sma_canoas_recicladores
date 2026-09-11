@@ -1,10 +1,8 @@
-import { redirect } from "next/navigation";
-import { getToken } from "@/lib/session";
+import { requireUser } from "@/lib/auth";
 import { getCooperatives } from "@/lib/data";
 
 export default async function CooperativasPage() {
-  const token = await getToken();
-  if (!token) redirect("/login");
+  const { token } = await requireUser();
 
   const cooperatives = (await getCooperatives(token)).filter((c) => c.active);
 
@@ -30,7 +28,7 @@ export default async function CooperativasPage() {
                 {coop.address}
               </p>
             ) : null}
-            <div className="flex items-center gap-3 mt-1">
+            <div className="flex items-center gap-3 mt-1 flex-wrap">
               {coop.phone ? (
                 <a
                   href={`tel:${coop.phone}`}

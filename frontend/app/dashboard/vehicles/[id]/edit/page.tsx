@@ -1,9 +1,9 @@
-import { redirect, notFound } from "next/navigation";
-import { getToken } from "@/lib/session";
-import { getCurrentUser } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/auth";
 import { getVehicle, getCooperatives } from "@/lib/data";
 import { ApiError } from "@/lib/api";
 import { VehicleForm } from "../../vehicle-form";
+import { PageHeader } from "../../../page-header";
 
 export default async function EditVehiclePage({
   params,
@@ -11,11 +11,7 @@ export default async function EditVehiclePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const token = await getToken();
-  if (!token) redirect("/login");
-
-  const user = await getCurrentUser(token);
-  if (!user) redirect("/login");
+  const { token, user } = await requireUser();
 
   let vehicle;
   try {
@@ -29,12 +25,7 @@ export default async function EditVehiclePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <span className="text-label-lg text-primary uppercase tracking-wider">
-          Frota
-        </span>
-        <h1 className="text-display-lg text-on-surface">Editar Veículo</h1>
-      </div>
+      <PageHeader eyebrow="Frota" title="Editar Veículo" />
       <VehicleForm vehicle={vehicle} cooperatives={cooperatives} />
     </div>
   );

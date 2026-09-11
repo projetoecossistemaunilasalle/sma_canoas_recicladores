@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Canoas Coleta+",
-  description: "Gestão de frota e rotas de coleta para cooperativas de reciclagem de Canoas",
+  title: "Canoas Recicla com a Gente",
+  description: "Gestão de frota e rotas de coleta para as cooperativas de reciclagem do projeto Canoas Recicla com a Gente",
 };
 
 export default function RootLayout({

@@ -13,7 +13,8 @@ import {
   endLoanSchema,
   routeConflictSchema,
 } from "./vehicle.schema"
-import { authenticate, requireRole } from "../../middleware/auth.middleware"
+import { errorResponseSchema, idParamSchema } from "../common.schema"
+import { requireStaff } from "../../middleware/auth.middleware"
 
 const controller = new VehicleController()
 
@@ -21,7 +22,7 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "List vehicles",
         tags: ["Vehicles"],
@@ -34,12 +35,12 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Get vehicle by ID",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
-        response: { 200: vehicleSchema, 404: z.object({ message: z.string() }) },
+        params: idParamSchema,
+        response: { 200: vehicleSchema, 404: errorResponseSchema },
       },
     },
     controller.getById.bind(controller)
@@ -48,7 +49,7 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/vehicles",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Create vehicle",
         tags: ["Vehicles"],
@@ -62,13 +63,13 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.put(
     "/vehicles/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Update vehicle",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
+        params: idParamSchema,
         body: updateVehicleSchema,
-        response: { 200: vehicleSchema, 404: z.object({ message: z.string() }) },
+        response: { 200: vehicleSchema, 404: errorResponseSchema },
       },
     },
     controller.update.bind(controller)
@@ -77,12 +78,12 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.delete(
     "/vehicles/:id",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Delete vehicle",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
-        response: { 204: z.any(), 404: z.object({ message: z.string() }) },
+        params: idParamSchema,
+        response: { 204: z.any(), 404: errorResponseSchema },
       },
     },
     controller.remove.bind(controller)
@@ -91,11 +92,11 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id/positions",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Get vehicle positions history",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
+        params: idParamSchema,
         querystring: z.object({ limit: z.string().optional() }),
         response: { 200: z.array(vehiclePositionSchema) },
       },
@@ -106,12 +107,12 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id/positions/latest",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Get latest vehicle position",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
-        response: { 200: vehiclePositionSchema, 404: z.object({ message: z.string() }) },
+        params: idParamSchema,
+        response: { 200: vehiclePositionSchema, 404: errorResponseSchema },
       },
     },
     controller.getLatestPosition.bind(controller)
@@ -120,11 +121,11 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/vehicles/:id/positions",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Register vehicle position",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
+        params: idParamSchema,
         body: createPositionSchema,
         response: { 201: vehiclePositionSchema },
       },
@@ -135,13 +136,13 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id/eta",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Check if this vehicle's route is near a given point, and its ETA",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
+        params: idParamSchema,
         querystring: etaQuerySchema,
-        response: { 200: etaSchema, 404: z.object({ message: z.string() }) },
+        response: { 200: etaSchema, 404: errorResponseSchema },
       },
     },
     controller.getEta.bind(controller)
@@ -150,16 +151,16 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/vehicles/:id/loan",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "Lend a vehicle to another cooperative. Returns 409 with the conflicting routes if the vehicle is on an active route and confirmUnlink wasn't set.",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
+        params: idParamSchema,
         body: loanVehicleSchema,
         response: {
           200: vehicleSchema,
-          400: z.object({ message: z.string() }),
-          404: z.object({ message: z.string() }),
+          400: errorResponseSchema,
+          404: errorResponseSchema,
           409: routeConflictSchema,
         },
       },
@@ -170,16 +171,16 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/vehicles/:id/loan/return",
     {
-      preHandler: [authenticate, requireRole("admin", "cooperative_admin")],
+      preHandler: requireStaff,
       schema: {
         summary: "End a vehicle's active loan. Returns 409 with the conflicting routes if the vehicle is on an active route and confirmUnlink wasn't set.",
         tags: ["Vehicles"],
-        params: z.object({ id: z.string().uuid() }),
+        params: idParamSchema,
         body: endLoanSchema,
         response: {
           200: vehicleSchema,
-          400: z.object({ message: z.string() }),
-          404: z.object({ message: z.string() }),
+          400: errorResponseSchema,
+          404: errorResponseSchema,
           409: routeConflictSchema,
         },
       },

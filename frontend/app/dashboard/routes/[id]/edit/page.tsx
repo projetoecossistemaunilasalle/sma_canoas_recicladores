@@ -1,9 +1,9 @@
-import { redirect, notFound } from "next/navigation";
-import { getToken } from "@/lib/session";
-import { getCurrentUser } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import { requireUser } from "@/lib/auth";
 import { getRoute, getRouteStops, getVehicles } from "@/lib/data";
 import { ApiError } from "@/lib/api";
 import { RouteBuilder } from "../../new/route-builder";
+import { PageHeader } from "../../../page-header";
 
 export default async function EditRoutePage({
   params,
@@ -11,15 +11,11 @@ export default async function EditRoutePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const token = await getToken();
-  if (!token) redirect("/login");
-
-  const user = await getCurrentUser(token);
-  if (!user) redirect("/login");
+  const { token } = await requireUser();
 
   let route;
   try {
-    [route] = await Promise.all([getRoute(token, id)]);
+    route = await getRoute(token, id);
   } catch (err) {
     if (err instanceof ApiError && err.status === 404) notFound();
     throw err;
@@ -29,12 +25,7 @@ export default async function EditRoutePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <span className="text-label-lg text-primary uppercase tracking-wider">
-          Rotas de Coleta
-        </span>
-        <h1 className="text-display-lg text-on-surface">Editar Rota</h1>
-      </div>
+      <PageHeader eyebrow="Rotas de Coleta" title="Editar Rota" />
       <RouteBuilder
         vehicles={vehicles}
         initial={{

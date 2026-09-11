@@ -4,16 +4,33 @@ import { UserService } from "./user.service"
 import { verifyPassword } from "../../lib/password"
 import { signToken } from "../../lib/jwt"
 import type { JwtPayload } from "../../lib/jwt"
+import { getCooperativeFilter, scopeCooperativeId } from "../../middleware/auth.middleware"
+import type { User } from "../../db/schema"
 import type { createUserSchema, updateUserSchema } from "./user.schema"
 
 const service = new UserService()
 
-function getCooperativeFilter(request: FastifyRequest): string | undefined {
-  const user = request.user as JwtPayload
-  if (user.role === "cooperative_admin" && user.cooperativeId) {
-    return user.cooperativeId
+// login() and register() both mint a token for a freshly-looked-up-or-created
+// user and shape the same 7-field response around it.
+function buildAuthResponse(user: User) {
+  const token = signToken({
+    userId: user.id,
+    email: user.email,
+    role: user.role,
+    cooperativeId: user.cooperativeId,
+  })
+  return {
+    token,
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      active: user.active,
+      cooperativeId: user.cooperativeId,
+      address: user.address,
+    },
   }
-  return undefined
 }
 
 export class UserController {
@@ -29,25 +46,7 @@ export class UserController {
       return reply.status(401).send({ message: "Invalid credentials" })
     }
 
-    const token = signToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      cooperativeId: user.cooperativeId,
-    })
-
-    return reply.send({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        active: user.active,
-        cooperativeId: user.cooperativeId,
-        address: user.address,
-      },
-    })
+    return reply.send(buildAuthResponse(user))
   }
 
   async list(request: FastifyRequest, reply: FastifyReply) {
@@ -65,12 +64,7 @@ export class UserController {
 
   async create(request: FastifyRequest<{ Body: z.infer<typeof createUserSchema> }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
-    let cooperativeId = request.body.cooperativeId
-
-    if (currentUser.role === "cooperative_admin") {
-      cooperativeId = currentUser.cooperativeId ?? undefined
-    }
-
+    const cooperativeId = scopeCooperativeId(currentUser, request.body.cooperativeId)
     const user = await service.create({ ...request.body, cooperativeId })
     return reply.status(201).send(user)
   }
@@ -129,25 +123,7 @@ export class UserController {
       addressLng: lng,
     })
 
-    const token = signToken({
-      userId: user.id,
-      email: user.email,
-      role: user.role,
-      cooperativeId: user.cooperativeId,
-    })
-
-    return reply.status(201).send({
-      token,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role,
-        active: user.active,
-        cooperativeId: user.cooperativeId,
-        address: user.address,
-      },
-    })
+    return reply.status(201).send(buildAuthResponse(user))
   }
 
   // A citizen editing their own profile. Same principle as register(): role

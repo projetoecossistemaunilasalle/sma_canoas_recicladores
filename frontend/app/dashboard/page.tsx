@@ -1,28 +1,26 @@
-import { redirect } from "next/navigation";
-import { getToken } from "@/lib/session";
-import { getCurrentUser } from "@/lib/auth";
+import Link from "next/link";
+import { requireUser } from "@/lib/auth";
 import {
   getVehicles,
   getRoutes,
   getCooperative,
   getLatestPosition,
 } from "@/lib/data";
-import { parseWktPoint, routeStatusLabel } from "@/lib/format";
+import { parseWktPoint, routeLiveStatusLabel, dayOfWeekLabel, shiftLabel, formatTime } from "@/lib/format";
 import type { VehiclePosition } from "@/lib/types";
 import { FleetMonitor, type FleetVehicleInfo } from "./fleet-monitor";
+import { PageHeader } from "./page-header";
 
 export default async function DashboardPage() {
-  const token = await getToken();
-  if (!token) redirect("/login");
-
-  const user = await getCurrentUser(token);
-  if (!user) redirect("/login");
+  const { token, user } = await requireUser();
 
   const [vehicles, routes, cooperative] = await Promise.all([
     getVehicles(token),
     getRoutes(token),
     user.cooperativeId ? getCooperative(token, user.cooperativeId) : null,
   ]);
+
+  const vehicleById = new Map(vehicles.map((v) => [v.id, v]));
 
   const positions = new Map<string, VehiclePosition | null>(
     await Promise.all(
@@ -33,7 +31,13 @@ export default async function DashboardPage() {
   );
 
   const activeVehicles = vehicles.filter((v) => v.active).length;
-  const activeRoutes = routes.filter((r) => r.status === "active").length;
+  // Real-time signal (today's schedule + current time inside the shift
+  // window), not just `status` — every route sits at status "active" from
+  // creation onward, so that alone can't tell "scheduled" from "happening
+  // right now" (see RouteService.withRunningStatus on the backend).
+  const runningRoutes = routes.filter((r) => r.isRunningNow).length;
+  // Routes actually running now surface first; the rest keep their existing order.
+  const sortedRoutes = [...routes].sort((a, b) => Number(b.isRunningNow) - Number(a.isRunningNow));
 
   const fleetVehicles: FleetVehicleInfo[] = vehicles.map((vehicle) => {
     const position = positions.get(vehicle.id);
@@ -57,15 +61,18 @@ export default async function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-8">
-      <div className="flex flex-col gap-2">
-        <span className="text-label-lg text-primary uppercase tracking-wider">
-          Painel da Cooperativa
-        </span>
-        <h1 className="text-display-lg text-on-surface">{title}</h1>
-        <p className="text-body-lg text-on-surface-variant">
-          Acompanhe a frota e as rotas de coleta{" "}
-          {cooperative ? "da sua cooperativa" : "de todas as cooperativas"}.
-        </p>
+      <PageHeader
+        eyebrow="Painel da Cooperativa"
+        title={title}
+        description={`Acompanhe a frota e as rotas de coleta ${cooperative ? "da sua cooperativa" : "de todas as cooperativas"}.`}
+      />
+
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <QuickAction href="/dashboard/routes/new" icon="add_road" label="Nova Rota" />
+        <QuickAction href="/dashboard/vehicles/new" icon="local_shipping" label="Novo Veículo" />
+        {user.role === "cooperative_admin" ? (
+          <QuickAction href="/dashboard/avisos" icon="campaign" label="Criar Aviso" />
+        ) : null}
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -82,7 +89,7 @@ export default async function DashboardPage() {
         <StatCard
           icon="route"
           label="Rotas em Andamento"
-          value={String(activeRoutes)}
+          value={String(runningRoutes)}
         />
         <StatCard
           icon="event_repeat"
@@ -106,35 +113,69 @@ export default async function DashboardPage() {
           <EmptyState message="Nenhuma rota cadastrada ainda." />
         ) : (
           <div className="flex flex-col gap-3">
-            {routes.map((route) => (
-              <div
-                key={route.id}
-                className="bg-surface p-3 rounded-xl flex items-center gap-4"
-              >
-                <div className="w-10 h-10 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center shrink-0">
-                  <span className="material-symbols-outlined text-[20px]">
-                    route
+            {sortedRoutes.map((route) => {
+              const vehicle = route.vehicleId ? vehicleById.get(route.vehicleId) : undefined;
+              return (
+                <div
+                  key={route.id}
+                  className="bg-surface p-3 rounded-xl flex items-center gap-4 flex-wrap"
+                >
+                  <div
+                    className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                      route.isRunningNow
+                        ? "bg-primary text-on-primary"
+                        : "bg-secondary-container text-on-secondary-container"
+                    }`}
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      route
+                    </span>
+                  </div>
+                  <div className="flex-1 min-w-[200px]">
+                    <p className="text-label-lg text-on-surface truncate">
+                      {vehicle?.plate ?? "Veículo removido"}
+                      {vehicle?.model ? ` · ${vehicle.model}` : ""}
+                    </p>
+                    <p className="text-body-md text-xs text-on-surface-variant truncate">
+                      {(route.daysOfWeek ?? []).map(dayOfWeekLabel).join(", ") || "Sem dias"}
+                      {" · "}
+                      {route.shift ? shiftLabel(route.shift) : "Sem turno"}
+                      {route.startTime ? ` · ${formatTime(route.startTime)}` : ""}
+                    </p>
+                  </div>
+                  <span
+                    className={`text-[10px] uppercase px-2 py-0.5 rounded-full shrink-0 flex items-center gap-1 ${
+                      route.isRunningNow
+                        ? "text-primary bg-primary/10 font-bold"
+                        : "text-secondary bg-secondary/10"
+                    }`}
+                  >
+                    {route.isRunningNow ? (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" aria-hidden="true" />
+                    ) : null}
+                    {routeLiveStatusLabel(route)}
                   </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-label-lg text-on-surface truncate">
-                    {route.scheduledDate ?? "Sem data agendada"}
-                  </p>
-                  <p className="text-body-md text-xs text-on-surface-variant truncate">
-                    {route.totalDistanceKm
-                      ? `${route.totalDistanceKm.toFixed(1)} km`
-                      : "Distância não calculada"}
-                  </p>
-                </div>
-                <span className="text-[10px] uppercase text-secondary px-2 py-0.5 bg-secondary/10 rounded-full shrink-0">
-                  {routeStatusLabel(route.status)}
-                </span>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </section>
     </div>
+  );
+}
+
+function QuickAction({ href, icon, label }: { href: string; icon: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="flex items-center gap-3 bg-surface-container rounded-2xl px-4 py-3.5 shadow-sm hover:shadow-md transition-shadow"
+    >
+      <span className="w-10 h-10 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center shrink-0">
+        <span className="material-symbols-outlined text-[20px]">{icon}</span>
+      </span>
+      <span className="text-label-lg text-on-surface">{label}</span>
+    </Link>
   );
 }
 

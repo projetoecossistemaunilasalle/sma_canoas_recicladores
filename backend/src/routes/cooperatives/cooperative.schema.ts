@@ -8,6 +8,8 @@ export const cooperativeSchema = z.object({
   address: z.string().nullable().optional(),
   instagram: z.string().nullable().optional(),
   website: z.string().nullable().optional(),
+  lat: z.number().nullable().optional(),
+  lng: z.number().nullable().optional(),
   active: z.boolean().default(true),
   createdAt: z.date().optional(),
   updatedAt: z.date().optional(),
@@ -20,6 +22,8 @@ export const createCooperativeSchema = z.object({
   address: z.string().optional(),
   instagram: z.string().optional(),
   website: z.string().optional(),
+  lat: z.number().nullable().optional(),
+  lng: z.number().nullable().optional(),
 })
 
 export const updateCooperativeSchema = createCooperativeSchema.partial()

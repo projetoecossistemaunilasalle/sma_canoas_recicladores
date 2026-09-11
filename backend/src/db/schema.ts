@@ -25,6 +25,10 @@ export const cooperatives = pgTable("cooperatives", {
   address: text("address"),
   instagram: text("instagram"),
   website: text("website"),
+  // Pin location for the citizen-facing maps, set via the same geocoded
+  // address-picker flow as users.addressLat/Lng (see /public/geocode).
+  lat: doublePrecision("lat"),
+  lng: doublePrecision("lng"),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -146,12 +150,37 @@ export const routeStreets = pgTable("route_streets", {
 })
 
 // ============================================
+// ANNOUNCEMENTS (avisos / notícias)
+// ============================================
+export const announcements = pgTable("announcements", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  cooperativeId: uuid("cooperative_id").notNull().references(() => cooperatives.id),
+  type: text("type").notNull().default("aviso"), // 'aviso' | 'noticia'
+  title: text("title"),
+  body: text("body").notNull(),
+  // Base64 data URLs (e.g. "data:image/png;base64,...."), size-capped at the
+  // API layer — see backend/src/lib/base64-image.ts.
+  mainImage: text("main_image"),
+  subImage1: text("sub_image_1"),
+  subImage2: text("sub_image_2"),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+})
+
+// ============================================
 // RELATIONS
 // ============================================
 export const cooperativesRelations = relations(cooperatives, ({ many }) => ({
   users: many(users),
   vehicles: many(vehicles),
   routes: many(collectionRoutes),
+  announcements: many(announcements),
+}))
+
+export const announcementsRelations = relations(announcements, ({ one }) => ({
+  cooperative: one(cooperatives, {
+    fields: [announcements.cooperativeId],
+    references: [cooperatives.id],
+  }),
 }))
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -225,3 +254,5 @@ export type CollectionRoute = typeof collectionRoutes.$inferSelect
 export type NewCollectionRoute = typeof collectionRoutes.$inferInsert
 export type RouteStreet = typeof routeStreets.$inferSelect
 export type NewRouteStreet = typeof routeStreets.$inferInsert
+export type Announcement = typeof announcements.$inferSelect
+export type NewAnnouncement = typeof announcements.$inferInsert

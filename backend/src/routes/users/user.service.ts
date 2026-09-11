@@ -2,21 +2,19 @@ import { eq, and } from "drizzle-orm"
 import { db } from "../../db"
 import { users, pushSubscriptions, type NewUser, type NewPushSubscription } from "../../db/schema"
 import { hashPassword } from "../../lib/password"
+import { scopeCondition } from "../../lib/db-scope"
 
 export class UserService {
   async findAll(filterCooperativeId?: string) {
-    if (filterCooperativeId) {
-      return db.select().from(users).where(eq(users.cooperativeId, filterCooperativeId))
-    }
-    return db.select().from(users)
+    return db.select().from(users).where(scopeCondition(undefined, users.cooperativeId, filterCooperativeId))
   }
 
   async findById(id: string, filterCooperativeId?: string) {
-    let query = db.select().from(users).where(eq(users.id, id)).limit(1)
-    if (filterCooperativeId) {
-      query = db.select().from(users).where(and(eq(users.id, id), eq(users.cooperativeId, filterCooperativeId))).limit(1)
-    }
-    const [user] = await query
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(scopeCondition(eq(users.id, id), users.cooperativeId, filterCooperativeId))
+      .limit(1)
     return user ?? null
   }
 
@@ -40,29 +38,19 @@ export class UserService {
       payload.password = await hashPassword(data.password)
     }
 
-    let query
-    if (filterCooperativeId) {
-      query = db
-        .update(users)
-        .set(payload)
-        .where(and(eq(users.id, id), eq(users.cooperativeId, filterCooperativeId)))
-        .returning()
-    } else {
-      query = db.update(users).set(payload).where(eq(users.id, id)).returning()
-    }
-
-    const [user] = await query
+    const [user] = await db
+      .update(users)
+      .set(payload)
+      .where(scopeCondition(eq(users.id, id), users.cooperativeId, filterCooperativeId))
+      .returning()
     return user ?? null
   }
 
   async delete(id: string, filterCooperativeId?: string) {
-    let query
-    if (filterCooperativeId) {
-      query = db.delete(users).where(and(eq(users.id, id), eq(users.cooperativeId, filterCooperativeId))).returning()
-    } else {
-      query = db.delete(users).where(eq(users.id, id)).returning()
-    }
-    const [user] = await query
+    const [user] = await db
+      .delete(users)
+      .where(scopeCondition(eq(users.id, id), users.cooperativeId, filterCooperativeId))
+      .returning()
     return user ?? null
   }
 

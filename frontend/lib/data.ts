@@ -9,6 +9,8 @@ import type {
   RouteStop,
   RoutePreviewSegment,
   CurrentUser,
+  Announcement,
+  AnnouncementType,
 } from "./types";
 
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
@@ -142,6 +144,62 @@ export function deleteRoute(token: string, id: string) {
 
 export function getCooperative(token: string, id: string) {
   return apiFetch<Cooperative>(`/cooperatives/${id}`, token);
+}
+
+export interface CooperativeInput {
+  name?: string;
+  cnpj?: string;
+  phone?: string;
+  address?: string;
+  instagram?: string;
+  website?: string;
+  lat?: number | null;
+  lng?: number | null;
+}
+
+export function updateCooperative(token: string, id: string, data: CooperativeInput) {
+  return apiFetch<Cooperative>(`/cooperatives/${id}`, token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export interface AnnouncementInput {
+  type: AnnouncementType;
+  title?: string;
+  body: string;
+  mainImage?: string | null;
+  subImage1?: string | null;
+  subImage2?: string | null;
+}
+
+export function getAnnouncements(
+  token: string,
+  params?: { type?: AnnouncementType; cooperativeId?: string }
+) {
+  const query = new URLSearchParams();
+  if (params?.type) query.set("type", params.type);
+  if (params?.cooperativeId) query.set("cooperativeId", params.cooperativeId);
+  const qs = query.toString();
+  return apiFetch<Announcement[]>(`/announcements${qs ? `?${qs}` : ""}`, token);
+}
+
+export function createAnnouncement(token: string, data: AnnouncementInput) {
+  return apiFetch<Announcement>("/announcements", token, {
+    method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export function updateAnnouncement(token: string, id: string, data: Partial<AnnouncementInput>) {
+  return apiFetch<Announcement>(`/announcements/${id}`, token, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+}
+
+export function deleteAnnouncement(token: string, id: string) {
+  return apiFetch<void>(`/announcements/${id}`, token, { method: "DELETE" });
 }
 
 export async function getLatestPosition(

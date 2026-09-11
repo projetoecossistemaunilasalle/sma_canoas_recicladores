@@ -84,7 +84,7 @@ export function FleetMonitor({ vehicles }: { vehicles: FleetVehicleInfo[] }) {
               </div>
               <span
                 className={`text-[10px] uppercase px-2 py-0.5 rounded-full shrink-0 ${
-                  v.active ? "text-primary bg-primary/10" : "text-on-surface-variant bg-surface-variant"
+                  v.active ? "text-secondary bg-secondary/10" : "text-on-surface-variant bg-surface-variant"
                 }`}
               >
                 {v.active ? "Ativo" : "Inativo"}

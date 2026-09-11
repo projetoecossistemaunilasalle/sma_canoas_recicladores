@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { getToken } from "@/lib/session";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { getVehicles, getCooperatives } from "@/lib/data";
 import { deleteVehicleAction } from "./actions";
 import { VehicleLoanControl } from "./vehicle-loan-control";
+import { PageHeader, EmptyListCard } from "../page-header";
+import { RowActions } from "../row-actions";
 import { vehicleColorHex, vehicleColorLabel, vehicleTypeIcon, vehicleTypeLabel } from "@/lib/vehicle-options";
 
 export default async function VehiclesListPage({
@@ -13,11 +13,7 @@ export default async function VehiclesListPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const token = await getToken();
-  if (!token) redirect("/login");
-
-  const user = await getCurrentUser(token);
-  if (!user) redirect("/login");
+  const { token, user } = await requireUser();
 
   const [vehicles, cooperatives] = await Promise.all([
     getVehicles(token),
@@ -27,21 +23,19 @@ export default async function VehiclesListPage({
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between gap-4 flex-wrap">
-        <div className="flex flex-col gap-2">
-          <span className="text-label-lg text-primary uppercase tracking-wider">
-            Frota
-          </span>
-          <h1 className="text-display-lg text-on-surface">Veículos Cadastrados</h1>
-        </div>
-        <Link
-          className="flex items-center gap-2 px-5 h-12 bg-primary text-on-primary text-action-lg rounded-full hover:bg-primary-container transition-colors shrink-0"
-          href="/dashboard/vehicles/new"
-        >
-          <span className="material-symbols-outlined">add_circle</span>
-          Novo Veículo
-        </Link>
-      </div>
+      <PageHeader
+        eyebrow="Frota"
+        title="Veículos Cadastrados"
+        action={
+          <Link
+            className="flex items-center gap-2 px-5 h-12 bg-primary text-on-primary text-action-lg rounded-full hover:bg-primary-container transition-colors shrink-0"
+            href="/dashboard/vehicles/new"
+          >
+            <span className="material-symbols-outlined">add_circle</span>
+            Novo Veículo
+          </Link>
+        }
+      />
 
       {error ? (
         <div className="bg-error-container text-on-error-container rounded-2xl p-4 text-body-md">
@@ -50,11 +44,7 @@ export default async function VehiclesListPage({
       ) : null}
 
       {vehicles.length === 0 ? (
-        <div className="bg-surface-container rounded-2xl p-12 text-center">
-          <p className="text-body-lg text-on-surface-variant">
-            Nenhum veículo cadastrado ainda.
-          </p>
-        </div>
+        <EmptyListCard message="Nenhum veículo cadastrado ainda." />
       ) : (
         <div className="flex flex-col gap-3">
           {vehicles.map((vehicle) => {
@@ -124,26 +114,10 @@ export default async function VehiclesListPage({
                     <VehicleLoanControl vehicle={vehicle} lendTargets={lendTargets} borrowerName={borrowerCoop?.name} />
                   ) : null}
                   {isOwner ? (
-                    <>
-                      <Link
-                        className="p-2 text-on-surface-variant hover:text-primary hover:bg-primary/10 rounded-full transition-colors"
-                        href={`/dashboard/vehicles/${vehicle.id}/edit`}
-                        aria-label="Editar"
-                        title="Editar"
-                      >
-                        <span className="material-symbols-outlined">edit</span>
-                      </Link>
-                      <form action={deleteVehicleAction.bind(null, vehicle.id)}>
-                        <button
-                          className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container rounded-full transition-colors"
-                          type="submit"
-                          aria-label="Excluir"
-                          title="Excluir"
-                        >
-                          <span className="material-symbols-outlined">delete</span>
-                        </button>
-                      </form>
-                    </>
+                    <RowActions
+                      editHref={`/dashboard/vehicles/${vehicle.id}/edit`}
+                      deleteAction={deleteVehicleAction.bind(null, vehicle.id)}
+                    />
                   ) : null}
                 </div>
               </div>

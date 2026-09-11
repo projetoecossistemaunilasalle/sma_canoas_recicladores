@@ -1,17 +1,12 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
+import type { z } from "zod"
 import { VehicleService } from "./vehicle.service"
 import type { JwtPayload } from "../../lib/jwt"
 import { recordAndBroadcastPosition } from "../../lib/position-ingest"
+import { getCooperativeFilter, scopeCooperativeId } from "../../middleware/auth.middleware"
+import type { createVehicleSchema, updateVehicleSchema } from "./vehicle.schema"
 
 const service = new VehicleService()
-
-function getCooperativeFilter(request: FastifyRequest): string | undefined {
-  const user = request.user as JwtPayload
-  if (user.role === "cooperative_admin" && user.cooperativeId) {
-    return user.cooperativeId
-  }
-  return undefined
-}
 
 export class VehicleController {
   async list(request: FastifyRequest, reply: FastifyReply) {
@@ -27,17 +22,14 @@ export class VehicleController {
     return reply.send(v)
   }
 
-  async create(request: FastifyRequest<{ Body: { plate?: string; model?: string; color?: string; type?: string; cooperativeId?: string; active?: boolean } }>, reply: FastifyReply) {
+  async create(request: FastifyRequest<{ Body: z.infer<typeof createVehicleSchema> }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
-    let cooperativeId = request.body.cooperativeId
-    if (currentUser.role === "cooperative_admin") {
-      cooperativeId = currentUser.cooperativeId ?? undefined
-    }
+    const cooperativeId = scopeCooperativeId(currentUser, request.body.cooperativeId)
     const v = await service.create({ ...request.body, cooperativeId })
     return reply.status(201).send(v)
   }
 
-  async update(request: FastifyRequest<{ Params: { id: string }; Body: Partial<{ plate?: string; model?: string; color?: string; type?: string; cooperativeId?: string; active?: boolean }> }>, reply: FastifyReply) {
+  async update(request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof updateVehicleSchema> }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
     const filter = getCooperativeFilter(request)
     if (currentUser.role === "cooperative_admin" && request.body.cooperativeId) {

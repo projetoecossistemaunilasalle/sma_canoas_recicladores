@@ -19,11 +19,65 @@ async function seed() {
     "Mãos Dadas",
   ]
 
+  // Real contact/location info supplied for 6 of the above. Coordinates were
+  // geocoded via Nominatim (same service backing /public/geocode), biased to
+  // Canoas; Mãos Dadas and Coopermag only resolved to neighborhood/landmark
+  // precision (exact address not in OSM) — correctable later via each
+  // cooperative's own self-edit screen (PUT /cooperatives/:id).
+  const coopDetails: Record<
+    string,
+    { cnpj?: string; phone?: string; address?: string; lat?: number; lng?: number }
+  > = {
+    Renascer: {
+      cnpj: "13.577.932/0001-43",
+      phone: "51 99281985",
+      address: "Estrada do Nazario, 3303",
+      lat: -29.9047642,
+      lng: -51.1297268,
+    },
+    Coopertec: {
+      cnpj: "17.681.134/0001-18",
+      phone: "51 984169301",
+      address: "Rua Primavera, 198, Rio Branco",
+      lat: -29.9650022,
+      lng: -51.2030159,
+    },
+    "Mãos Dadas": {
+      cnpj: "19.502.991/0001-39",
+      address: "Rua Edy Frederico Link, 85, Bairro Fátima",
+      lat: -29.9448424,
+      lng: -51.1867844,
+    },
+    Coopermag: {
+      cnpj: "13.502.010/0001-77",
+      address: "Rua Maria Elizabeth Finkler, S/N, em frente ao 270, Bairro Mato Grande",
+      lat: -29.9368266,
+      lng: -51.2021416,
+    },
+    CMGC: {
+      cnpj: "43.590.573/0001-25",
+      address: "Rua Engenheiro Kindler, 1261",
+      lat: -29.9139447,
+      lng: -51.2108885,
+    },
+    Coopersol: {
+      cnpj: "16.646.801/0001-69",
+      address: "Rua Washington Luiz, 165, Bairro Niterói, Canoas-RS",
+      lat: -29.9650632,
+      lng: -51.1710547,
+    },
+  }
+
   for (const name of coopNames) {
-    await db
-      .insert(cooperatives)
-      .values({ name })
-      .onConflictDoNothing({ target: cooperatives.name })
+    const details = coopDetails[name]
+    if (details) {
+      await db
+        .insert(cooperatives)
+        .values({ name, ...details })
+        .onConflictDoUpdate({ target: cooperatives.name, set: details })
+    } else {
+      await db.insert(cooperatives).values({ name }).onConflictDoNothing({ target: cooperatives.name })
+    }
   }
 
   const allCoops = await db.select().from(cooperatives)

@@ -1,4 +1,4 @@
-import type { CollectionCheckResult, GeocodeResult } from "./types";
+import type { CollectionCheckResult, GeocodeResult, PublicCooperativeSummary } from "./types";
 
 // Client-side fetches for the anonymous public home — deliberately separate
 // from lib/api.ts/data.ts, which are server-only and always require a JWT.
@@ -24,4 +24,8 @@ export async function checkCollectionForAddress(
   lng: number
 ): Promise<CollectionCheckResult> {
   return publicFetch<CollectionCheckResult>(`/public/collection-check?lat=${lat}&lng=${lng}`);
+}
+
+export async function getPublicCooperatives(): Promise<PublicCooperativeSummary[]> {
+  return publicFetch<PublicCooperativeSummary[]>("/public/cooperatives");
 }

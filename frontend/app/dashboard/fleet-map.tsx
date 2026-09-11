@@ -6,17 +6,10 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import { vehicleColorHex, vehicleIconTextColor, vehicleTypeIcon } from "@/lib/vehicle-options";
 import { CANOAS_CENTER } from "@/lib/geo";
+import { ensureLeafletDefaultIcon } from "@/lib/leaflet-default-icon";
 import type { VehicleType } from "@/lib/types";
 
-// Leaflet's default marker icon paths break once bundled by Next.js — point
-// them at the same CDN Leaflet itself ships from instead of local assets.
-delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl:
-    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+ensureLeafletDefaultIcon();
 
 export interface FleetMapPoint {
   id: string;

@@ -13,4 +13,9 @@ export class PublicTrackingController {
     const result = await service.checkAddress(request.query.lat, request.query.lng)
     return reply.send(result)
   }
+
+  async cooperatives(_request: FastifyRequest, reply: FastifyReply) {
+    const results = await service.listActiveCooperatives()
+    return reply.send(results)
+  }
 }

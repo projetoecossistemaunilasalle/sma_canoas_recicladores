@@ -1,10 +1,19 @@
-import { eq } from "drizzle-orm"
+import { and, eq, isNotNull } from "drizzle-orm"
 import { db } from "../../db"
 import { cooperatives, type NewCooperative } from "../../db/schema"
 
 export class CooperativeService {
   async findAll() {
     return db.select().from(cooperatives)
+  }
+
+  // Active cooperatives with a pin location set — backs the public/citizen
+  // map POIs (see public-tracking.service.ts's listActiveCooperatives).
+  async findActiveWithCoordinates() {
+    return db
+      .select()
+      .from(cooperatives)
+      .where(and(eq(cooperatives.active, true), isNotNull(cooperatives.lat), isNotNull(cooperatives.lng)))
   }
 
   async findById(id: string) {

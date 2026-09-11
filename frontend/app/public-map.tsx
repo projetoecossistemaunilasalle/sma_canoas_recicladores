@@ -1,25 +1,19 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Tooltip, Polyline, CircleMarker, useMap, useMapEvents } from "react-leaflet";
+import { MapContainer, TileLayer, Marker, Tooltip, Popup, Polyline, CircleMarker, useMap, useMapEvents } from "react-leaflet";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
-import { CANOAS_CENTER } from "@/lib/geo";
+import { CANOAS_CENTER, computeBearing } from "@/lib/geo";
+import { ensureLeafletDefaultIcon } from "@/lib/leaflet-default-icon";
 import { vehicleColorHex, vehicleIconTextColor } from "@/lib/vehicle-options";
-import type { LatLng, PublicVehicleSummary } from "@/lib/types";
+import type { LatLng, PublicVehicleSummary, PublicCooperativeSummary } from "@/lib/types";
 
-// Leaflet's default marker icon paths break once bundled by Next.js — same
-// workaround used in dashboard/fleet-map.tsx and tracking/tracking-map.tsx.
-delete (L.Icon.Default.prototype as { _getIconUrl?: unknown })._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
-  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
-  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
-});
+ensureLeafletDefaultIcon();
 
 const homeIcon = L.divIcon({
   className: "",
-  html: `<div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:#3755C3;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;">
+  html: `<div style="width:36px;height:36px;border-radius:50% 50% 50% 0;background:#6A2C91;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);transform:rotate(-45deg);display:flex;align-items:center;justify-content:center;">
     <span class="material-symbols-outlined" style="font-size:18px;color:#fff;transform:rotate(45deg);line-height:1;">home</span>
   </div>`,
   iconSize: [36, 36],
@@ -41,12 +35,22 @@ function truckDivIcon(color: string | null, heading: number | null) {
   });
 }
 
+const cooperativeIcon = L.divIcon({
+  className: "",
+  html: `<div style="width:34px;height:34px;border-radius:50%;background:#2E7D32;border:3px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.35);display:flex;align-items:center;justify-content:center;">
+    <span class="material-symbols-outlined" style="font-size:18px;color:#fff;line-height:1;">recycling</span>
+  </div>`,
+  iconSize: [34, 34],
+  iconAnchor: [17, 17],
+  popupAnchor: [0, -14],
+});
+
 function arrowDivIcon(headingDeg: number) {
   return L.divIcon({
     className: "",
     html: `<div style="width:14px;height:14px;transform:rotate(${headingDeg}deg);">
       <svg width="14" height="14" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.5));">
-        <path d="M12 2 L20 20 L12 15 L4 20 Z" fill="#ffffff" stroke="#3755C3" stroke-width="1.5"/>
+        <path d="M12 2 L20 20 L12 15 L4 20 Z" fill="#ffffff" stroke="#6A2C91" stroke-width="1.5"/>
       </svg>
     </div>`,
     iconSize: [14, 14],
@@ -63,17 +67,6 @@ function haversineMeters(a: { lat: number; lng: number }, b: { lat: number; lng:
   return R * 2 * Math.atan2(Math.sqrt(s), Math.sqrt(1 - s));
 }
 
-function bearingDeg(a: { lat: number; lng: number }, b: { lat: number; lng: number }) {
-  const toRad = (d: number) => (d * Math.PI) / 180;
-  const toDeg = (r: number) => (r * 180) / Math.PI;
-  const dLng = toRad(b.lng - a.lng);
-  const lat1 = toRad(a.lat);
-  const lat2 = toRad(b.lat);
-  const y = Math.sin(dLng) * Math.cos(lat2);
-  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-  return (toDeg(Math.atan2(y, x)) + 360) % 360;
-}
-
 // Places a small arrow every ~90m of real (not straight-line) distance along
 // the path, pointing in the direction of travel at that point — a
 // serpentine collection route can double back on the same block more than
@@ -88,7 +81,7 @@ function sampleDirectionArrows(path: LatLng[]): { position: LatLng; heading: num
   for (let i = 1; i < path.length; i++) {
     distSinceLast += haversineMeters(path[i - 1], path[i]);
     if (distSinceLast >= ARROW_SPACING_METERS) {
-      arrows.push({ position: path[i], heading: bearingDeg(path[i - 1], path[i]) });
+      arrows.push({ position: path[i], heading: computeBearing(path[i - 1], path[i]) });
       distSinceLast = 0;
     }
   }
@@ -137,6 +130,7 @@ export interface PublicMapProps {
   onResumeFollow: () => void;
   path?: LatLng[];
   stops?: { streetId: number; name: string | null; lat: number; lng: number }[];
+  cooperatives?: PublicCooperativeSummary[];
 }
 
 export function PublicMap({
@@ -149,6 +143,7 @@ export function PublicMap({
   onResumeFollow,
   path = [],
   stops = [],
+  cooperatives = [],
 }: PublicMapProps) {
   const directionArrows = useMemo(() => sampleDirectionArrows(path), [path]);
   // Leaflet's SVG renderer clips/simplifies polylines against the current
@@ -192,7 +187,7 @@ export function PublicMap({
             />
             <Polyline
               positions={pathSegments}
-              pathOptions={{ color: "#3755C3", weight: 4, opacity: 0.95 }}
+              pathOptions={{ color: "#6A2C91", weight: 4, opacity: 0.95 }}
               smoothFactor={0}
             />
           </>
@@ -212,10 +207,29 @@ export function PublicMap({
             key={`${stop.streetId}-${index}`}
             center={[stop.lat, stop.lng]}
             radius={4}
-            pathOptions={{ color: "#ffffff", weight: 2, fillColor: "#3755C3", fillOpacity: 1 }}
+            pathOptions={{ color: "#ffffff", weight: 2, fillColor: "#6A2C91", fillOpacity: 1 }}
           >
             {stop.name ? <Tooltip direction="top">{stop.name}</Tooltip> : null}
           </CircleMarker>
+        ))}
+
+        {cooperatives.map((coop) => (
+          <Marker key={coop.id} position={[coop.lat, coop.lng]} icon={cooperativeIcon}>
+            <Popup>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4, minWidth: 160 }}>
+                <strong>{coop.name}</strong>
+                {coop.address ? <span>{coop.address}</span> : null}
+                <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
+                  {coop.phone ? <a href={`tel:${coop.phone}`}>Contato</a> : null}
+                  {coop.instagram ? (
+                    <a href={coop.instagram} target="_blank" rel="noreferrer">
+                      Instagram
+                    </a>
+                  ) : null}
+                </div>
+              </div>
+            </Popup>
+          </Marker>
         ))}
 
         {addressPosition ? <Marker position={[addressPosition.lat, addressPosition.lng]} icon={homeIcon} /> : null}

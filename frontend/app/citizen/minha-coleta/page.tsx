@@ -1,13 +1,13 @@
-import { redirect } from "next/navigation";
-import { getToken } from "@/lib/session";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
+import { getCooperatives } from "@/lib/data";
 import { MinhaColeta } from "./minha-coleta-view";
 
 export default async function MinhaColetaPage() {
-  const token = await getToken();
-  if (!token) redirect("/login");
-  const user = await getCurrentUser(token);
-  if (!user) redirect("/login");
+  const { token, user } = await requireUser();
 
-  return <MinhaColeta user={user} />;
+  const cooperatives = (await getCooperatives(token)).filter(
+    (c) => c.active && c.lat != null && c.lng != null
+  );
+
+  return <MinhaColeta user={user} cooperatives={cooperatives} />;
 }

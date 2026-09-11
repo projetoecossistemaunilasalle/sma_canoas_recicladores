@@ -1,24 +1,43 @@
 services:
-  - type: pserv
+  - type: web
     name: sma-canoas-backend
     runtime: docker
     dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
     healthCheckPath: /health
-    plan: free
+    # preDeployCommand needs a paid plan — moot anyway, since the DB service
+    # below already requires one for its disk (see the note there).
+    plan: starter
+    preDeployCommand: pnpm exec tsx src/db/import-streets.ts
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
         value: 3001
-      - key: DATABASE_URL
-        fromDatabase:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PGHOST
+        fromService:
           name: sma-canoas-db
-          property: connectionString
+          type: pserv
+          property: host
+      - key: PGPORT
+        fromService:
+          name: sma-canoas-db
+          type: pserv
+          property: port
+      - key: PGUSER
+        value: postgres
+      - key: PGDATABASE
+        value: recicladores
+      - key: PGPASSWORD
+        sync: false
 
   - type: web
     name: sma-canoas-frontend
     runtime: docker
     dockerfilePath: ./frontend/Dockerfile
+    dockerContext: ./frontend
     healthCheckPath: /
     plan: free
     envVars:
@@ -31,8 +50,27 @@ services:
       - key: NEXT_PUBLIC_API_URL
         value: /api
 
-databases:
-  - name: sma-canoas-db
-    databaseName: recicladores
-    user: postgres
-    plan: free
+  # Render's managed Postgres (a top-level `databases:` entry) only allows a
+  # fixed extension allowlist that does NOT include pgRouting — and this app
+  # calls pgr_dijkstra/pgr_createTopology for live route calculations, not
+  # just at import time. So the DB has to be this project's own PostGIS +
+  # pgRouting image, self-hosted here as a private service instead of Render's
+  # native Postgres product. Needs a paid plan: persistent disks aren't
+  # available on the free tier.
+  - type: pserv
+    name: sma-canoas-db
+    runtime: docker
+    dockerfilePath: ./docker/postgres/Dockerfile
+    dockerContext: ./docker/postgres
+    plan: starter
+    disk:
+      name: postgres-data
+      mountPath: /var/lib/postgresql/data
+      sizeGB: 1
+    envVars:
+      - key: POSTGRES_USER
+        value: postgres
+      - key: POSTGRES_DB
+        value: recicladores
+      - key: POSTGRES_PASSWORD
+        sync: false

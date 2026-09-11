@@ -19,9 +19,38 @@ export interface Cooperative {
   address: string | null;
   instagram: string | null;
   website: string | null;
+  lat: number | null;
+  lng: number | null;
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+// Narrower directory info shown on the anonymous pre-login public map — no
+// cnpj/active/timestamps, mirrors PublicVehicleSummary's narrowing.
+export interface PublicCooperativeSummary {
+  id: string;
+  name: string;
+  address: string | null;
+  phone: string | null;
+  instagram: string | null;
+  lat: number;
+  lng: number;
+}
+
+export type AnnouncementType = "aviso" | "noticia";
+
+export interface Announcement {
+  id: string;
+  cooperativeId: string;
+  cooperativeName: string;
+  type: AnnouncementType;
+  title: string | null;
+  body: string;
+  mainImage: string | null;
+  subImage1: string | null;
+  subImage2: string | null;
+  createdAt: string;
 }
 
 export type VehicleType = "caminhao" | "bicicleta";
@@ -68,6 +97,7 @@ export interface CollectionRoute {
   startedAt: string | null;
   completedAt: string | null;
   createdAt?: string;
+  isRunningNow: boolean;
 }
 
 export interface Street {

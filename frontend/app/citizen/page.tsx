@@ -1,14 +1,9 @@
-import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getToken } from "@/lib/session";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { CitizenHomeSummary } from "./citizen-home-summary";
 
 export default async function CitizenHomePage() {
-  const token = await getToken();
-  if (!token) redirect("/login");
-  const user = await getCurrentUser(token);
-  if (!user) redirect("/login");
+  const { user } = await requireUser();
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 pb-28 flex flex-col gap-6">

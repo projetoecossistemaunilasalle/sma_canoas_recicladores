@@ -1,3 +1,29 @@
+import type { DayOfWeek, Shift } from "./types";
+
+export const DAYS_OF_WEEK: { value: DayOfWeek; label: string }[] = [
+  { value: "seg", label: "Seg" },
+  { value: "ter", label: "Ter" },
+  { value: "qua", label: "Qua" },
+  { value: "qui", label: "Qui" },
+  { value: "sex", label: "Sex" },
+  { value: "sab", label: "Sáb" },
+  { value: "dom", label: "Dom" },
+];
+
+export const SHIFTS: { value: Shift; label: string }[] = [
+  { value: "manha", label: "Manhã" },
+  { value: "tarde", label: "Tarde" },
+  { value: "noite", label: "Noite" },
+];
+
+export function dayOfWeekLabel(value: string): string {
+  return DAYS_OF_WEEK.find((d) => d.value === value)?.label ?? value;
+}
+
+export function shiftLabel(value: string): string {
+  return SHIFTS.find((s) => s.value === value)?.label ?? value;
+}
+
 export function parseWktPoint(wkt: string): { lat: number; lng: number } | null {
   const match = /POINT\(\s*(-?[\d.]+)\s+(-?[\d.]+)\s*\)/i.exec(wkt);
   if (!match) return null;
@@ -37,6 +63,18 @@ const routeStatusLabels: Record<string, string> = {
 
 export function routeStatusLabel(status: string): string {
   return routeStatusLabels[status] ?? status;
+}
+
+// Every route sits at status "active" from creation onward (there's no
+// start/stop action in this app), so routeStatusLabel("active") alone reads
+// as "Em andamento" for routes that aren't actually running right now —
+// the same ambiguity as the raw status. Callers with `isRunningNow` (the
+// backend's real schedule-based signal) should use this instead so only the
+// route genuinely running now gets that label.
+export function routeLiveStatusLabel(route: { status: string; isRunningNow: boolean }): string {
+  if (route.isRunningNow) return "Rodando agora";
+  if (route.status === "active") return "Agendada";
+  return routeStatusLabel(route.status);
 }
 
 // "09:12:00" -> "09:12"

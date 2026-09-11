@@ -15,6 +15,16 @@ export const collectionCheckQuerySchema = z.object({
   lng: z.coerce.number(),
 })
 
+export const publicCooperativeSchema = z.object({
+  id: z.uuid(),
+  name: z.string(),
+  address: z.string().nullable(),
+  phone: z.string().nullable(),
+  instagram: z.string().nullable(),
+  lat: z.number(),
+  lng: z.number(),
+})
+
 const vehicleSummarySchema = z.object({
   id: z.string().uuid(),
   plate: z.string().nullable(),

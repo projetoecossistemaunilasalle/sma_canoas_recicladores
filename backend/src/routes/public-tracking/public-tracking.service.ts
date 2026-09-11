@@ -1,13 +1,13 @@
 import { sql } from "drizzle-orm"
 import { db } from "../../db"
 import { parseWktPoint } from "../../lib/geo"
+import { WEEKDAY_ORDER } from "../../lib/weekdays"
+import { getTodayContext } from "../../lib/schedule"
 import { VehicleService } from "../vehicles/vehicle.service"
+import { CooperativeService } from "../cooperatives/cooperative.service"
 
 const vehicleService = new VehicleService()
-
-// Matches the day mapping used by get_eta_following_route() in
-// docker/postgres/initdb/005-maps.sql (EXTRACT(ISODOW ...) 1=Monday..7=Sunday).
-const WEEKDAY_ORDER = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"]
+const cooperativeService = new CooperativeService()
 
 const NOMINATIM_URL = process.env.NOMINATIM_URL ?? "https://nominatim.openstreetmap.org/search"
 // Approximate bounding box around Canoas, RS: left,top,right,bottom (lng,lat).
@@ -55,6 +55,21 @@ export class PublicTrackingService {
     return data.map((d) => ({ label: d.display_name, lat: Number(d.lat), lng: Number(d.lon) }))
   }
 
+  // Cooperative pins for the pre-login public map — no auth here, so only
+  // routine directory fields (no cnpj/active/timestamps) are exposed.
+  async listActiveCooperatives() {
+    const coops = await cooperativeService.findActiveWithCoordinates()
+    return coops.map((c) => ({
+      id: c.id,
+      name: c.name,
+      address: c.address,
+      phone: c.phone,
+      instagram: c.instagram,
+      lat: c.lat as number,
+      lng: c.lng as number,
+    }))
+  }
+
   async checkAddress(lat: number, lng: number) {
     const nearestAny = await this.findNearestStreet(lat, lng)
     const servedStreet = nearestAny ? await this.resolveServedStreet(lat, lng, nearestAny) : null
@@ -63,7 +78,7 @@ export class PublicTrackingService {
 
     if (!servedStreet) return { status: "no_route" as const, street: street.name }
 
-    const { today, nowTime } = await this.getTodayContext()
+    const { today, nowTime } = await getTodayContext()
     const schedule = await this.findScheduleForStreet(street.id, today)
     if (!schedule) return { status: "no_route" as const, street: street.name }
 
@@ -136,19 +151,6 @@ export class PublicTrackingService {
     return result.rows[0] ?? null
   }
 
-  // Resolves the street segment that should represent this address for
-  // schedule/route lookups. If the segment literally nearest the address is
-  // itself served, use it directly. Otherwise, OSM sometimes splits one
-  // continuous street into several short segments (one per intersection) —
-  // the segment right at a corner can be unserved while the street
-  // continues, served, just past that corner. Only treat this as that kind
-  // of corner ambiguity (and bridge to a nearby served segment) when the
-  // address itself sits near one END of its own unserved segment. If it
-  // sits solidly mid-block, the street is genuinely not served there, even
-  // if a same-named block elsewhere is — bridging on raw distance from the
-  // address instead of this let a real ~230m-long unserved stretch of Rua
-  // Charrua (address sitting mid-block, 115m from the nearest served
-  // neighboring block) get wrongly reported as having collection.
   private async resolveServedStreet(
     lat: number,
     lng: number,
@@ -178,11 +180,7 @@ export class PublicTrackingService {
     )
   }
 
-  // Same idea as findNearestStreet, but only considers segments that are
-  // actually part of some route_streets row. Only called from
-  // resolveServedStreet once a corner-ambiguity situation is already
-  // confirmed, so a generous radius here just widens which neighboring
-  // segment gets picked, not whether bridging happens at all.
+
   private async findNearestServedStreet(
     lat: number,
     lng: number,
@@ -201,20 +199,6 @@ export class PublicTrackingService {
       LIMIT 1
     `)
     return result.rows[0] ?? null
-  }
-
-  private async getTodayContext(): Promise<{ today: string; nowTime: string }> {
-    const result = await db.execute<{ today: string; now_time: string }>(sql`
-      SELECT
-        (CASE EXTRACT(ISODOW FROM CURRENT_DATE)
-          WHEN 1 THEN 'seg' WHEN 2 THEN 'ter' WHEN 3 THEN 'qua'
-          WHEN 4 THEN 'qui' WHEN 5 THEN 'sex' WHEN 6 THEN 'sab'
-          WHEN 7 THEN 'dom'
-        END) AS today,
-        LOCALTIME::text AS now_time
-    `)
-    const row = result.rows[0]
-    return { today: row.today, nowTime: row.now_time }
   }
 
   private async findScheduleForStreet(streetId: number, today: string): Promise<ScheduleCandidate | null> {

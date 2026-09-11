@@ -1,19 +1,13 @@
-import { redirect } from "next/navigation";
-import { getToken } from "@/lib/session";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { logout } from "@/app/login/actions";
-import { DashboardNav } from "./dashboard-nav";
+import { DashboardNav, DashboardMobileNav } from "./dashboard-nav";
 
 export default async function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const token = await getToken();
-  if (!token) redirect("/login");
-
-  const user = await getCurrentUser(token);
-  if (!user) redirect("/login");
+  const { user } = await requireUser();
 
   if (user.role !== "admin" && user.role !== "cooperative_admin") {
     return (
@@ -39,23 +33,23 @@ export default async function DashboardLayout({
 
   return (
     <div className="min-h-screen bg-surface md:flex">
-      <aside className="md:fixed md:left-0 md:top-0 md:h-full md:w-72 bg-surface-container-lowest md:shadow-[1px_0_8px_rgba(0,0,0,0.02)] flex md:flex-col">
-        <div className="px-8 py-8 flex items-center gap-2">
+      <aside className="sticky top-0 z-40 md:z-auto md:fixed md:left-0 md:top-0 md:h-full md:w-72 bg-surface-container-lowest border-b border-outline-variant/40 md:border-b-0 md:shadow-[1px_0_8px_rgba(0,0,0,0.02)] flex items-center justify-between md:items-stretch md:justify-start md:flex-col">
+        <div className="px-4 py-3 md:px-8 md:py-8 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-[32px]">
             recycling
           </span>
           <div className="flex flex-col">
             <span className="text-headline-lg text-primary leading-none">
-              Canoas
+              Canoas Recicla
             </span>
             <span className="text-label-lg text-secondary tracking-widest uppercase">
-              Coleta+
+              com a Gente
             </span>
           </div>
         </div>
-        <DashboardNav />
-        <div className="p-8 border-t border-outline-variant mt-auto flex items-center justify-between gap-3">
-          <div className="flex items-center gap-4 min-w-0">
+        <DashboardNav role={user.role} />
+        <div className="p-3 md:p-8 md:border-t border-outline-variant md:mt-auto flex items-center justify-between gap-3">
+          <div className="hidden sm:flex items-center gap-4 min-w-0">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
               <span className="material-symbols-outlined text-on-primary text-[20px]">
                 person
@@ -83,8 +77,9 @@ export default async function DashboardLayout({
         </div>
       </aside>
       <div className="flex-1 md:pl-72">
-        <main className="px-5 py-8">{children}</main>
+        <main className="px-4 sm:px-5 py-6 sm:py-8 pb-24 md:pb-8">{children}</main>
       </div>
+      <DashboardMobileNav role={user.role} />
     </div>
   );
 }

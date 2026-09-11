@@ -1,6 +1,8 @@
 import { eq, and, or, inArray, desc, sql } from "drizzle-orm"
 import { db } from "../../db"
 import { vehicles, vehiclePositions, collectionRoutes, type NewVehicle, type NewVehiclePosition } from "../../db/schema"
+import { scopeCondition } from "../../lib/db-scope"
+import { WEEKDAY_ORDER, WEEKDAY_LABELS } from "../../lib/weekdays"
 
 const positionColumns = {
   id: vehiclePositions.id,
@@ -27,8 +29,6 @@ export interface LoanResult {
   routes?: ConflictingRoute[]
 }
 
-const DAY_ORDER = ["seg", "ter", "qua", "qui", "sex", "sab", "dom"]
-const DAY_LABELS: Record<string, string> = { seg: "Seg", ter: "Ter", qua: "Qua", qui: "Qui", sex: "Sex", sab: "Sáb", dom: "Dom" }
 const SHIFT_LABELS: Record<string, string> = { manha: "Manhã", tarde: "Tarde", noite: "Noite" }
 
 function describeRoute(r: { daysOfWeek: string[] | null; shift: string | null; scheduledDate: string | null }): string {
@@ -36,8 +36,8 @@ function describeRoute(r: { daysOfWeek: string[] | null; shift: string | null; s
     // Stored in whatever order the cooperative clicked them in — sort to the
     // canonical week order so the confirmation dialog reads naturally.
     const days = [...r.daysOfWeek]
-      .sort((a, b) => DAY_ORDER.indexOf(a) - DAY_ORDER.indexOf(b))
-      .map((d) => DAY_LABELS[d] ?? d)
+      .sort((a, b) => WEEKDAY_ORDER.indexOf(a) - WEEKDAY_ORDER.indexOf(b))
+      .map((d) => WEEKDAY_LABELS[d] ?? d)
       .join(", ")
     const shift = r.shift ? ` · ${SHIFT_LABELS[r.shift] ?? r.shift}` : ""
     return `${days}${shift}`
@@ -71,11 +71,11 @@ export class VehicleService {
   }
 
   async findById(id: string, filterCooperativeId?: string) {
-    let query = db.select().from(vehicles).where(eq(vehicles.id, id)).limit(1)
-    if (filterCooperativeId) {
-      query = db.select().from(vehicles).where(and(eq(vehicles.id, id), eq(vehicles.cooperativeId, filterCooperativeId))).limit(1)
-    }
-    const [v] = await query
+    const [v] = await db
+      .select()
+      .from(vehicles)
+      .where(scopeCondition(eq(vehicles.id, id), vehicles.cooperativeId, filterCooperativeId))
+      .limit(1)
     return v ?? null
   }
 
@@ -91,24 +91,19 @@ export class VehicleService {
 
   async update(id: string, data: Partial<NewVehicle>, filterCooperativeId?: string) {
     const payload = { ...data, updatedAt: new Date() }
-    let query
-    if (filterCooperativeId) {
-      query = db.update(vehicles).set(payload).where(and(eq(vehicles.id, id), eq(vehicles.cooperativeId, filterCooperativeId))).returning()
-    } else {
-      query = db.update(vehicles).set(payload).where(eq(vehicles.id, id)).returning()
-    }
-    const [v] = await query
+    const [v] = await db
+      .update(vehicles)
+      .set(payload)
+      .where(scopeCondition(eq(vehicles.id, id), vehicles.cooperativeId, filterCooperativeId))
+      .returning()
     return v ?? null
   }
 
   async delete(id: string, filterCooperativeId?: string) {
-    let query
-    if (filterCooperativeId) {
-      query = db.delete(vehicles).where(and(eq(vehicles.id, id), eq(vehicles.cooperativeId, filterCooperativeId))).returning()
-    } else {
-      query = db.delete(vehicles).where(eq(vehicles.id, id)).returning()
-    }
-    const [v] = await query
+    const [v] = await db
+      .delete(vehicles)
+      .where(scopeCondition(eq(vehicles.id, id), vehicles.cooperativeId, filterCooperativeId))
+      .returning()
     return v ?? null
   }
 

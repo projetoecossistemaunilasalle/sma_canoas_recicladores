@@ -1,57 +1,62 @@
 @import "tailwindcss";
 
+/* Palette rebuilt around Canoas Recicla com a Gente's brand identity
+   (@canoasreciclacomagente): a deep-purple-to-magenta gradient with white
+   type — see the campaign key art this was matched against. Secondary is a
+   warm gold (purple's complement) kept distinct from primary/tertiary so
+   status badges and route accents still read clearly against the brand hue. */
 @theme {
-  --color-primary: #006b47;
+  --color-primary: #6a2c91;
   --color-on-primary: #ffffff;
-  --color-primary-container: #00875a;
+  --color-primary-container: #c2298a;
   --color-on-primary-container: #ffffff;
-  --color-primary-fixed: #8df7c1;
-  --color-primary-fixed-dim: #71dba6;
-  --color-on-primary-fixed: #002113;
-  --color-on-primary-fixed-variant: #005235;
-  --color-inverse-primary: #71dba6;
+  --color-primary-fixed: #f4d9f0;
+  --color-primary-fixed-dim: #e3acda;
+  --color-on-primary-fixed: #34093a;
+  --color-on-primary-fixed-variant: #5c2367;
+  --color-inverse-primary: #e3acda;
 
-  --color-secondary: #3755c3;
+  --color-secondary: #8a6d00;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #708cfd;
-  --color-on-secondary-container: #00217a;
-  --color-secondary-fixed: #dde1ff;
-  --color-secondary-fixed-dim: #b8c4ff;
-  --color-on-secondary-fixed: #001453;
-  --color-on-secondary-fixed-variant: #173bab;
+  --color-secondary-container: #f6e7b8;
+  --color-on-secondary-container: #4a3a00;
+  --color-secondary-fixed: #fbefc7;
+  --color-secondary-fixed-dim: #f0d989;
+  --color-on-secondary-fixed: #2b2100;
+  --color-on-secondary-fixed-variant: #4a3a00;
 
-  --color-tertiary: #785900;
+  --color-tertiary: #a8447a;
   --color-on-tertiary: #ffffff;
-  --color-tertiary-container: #977000;
-  --color-on-tertiary-container: #ffffff;
-  --color-tertiary-fixed: #ffdf9f;
-  --color-tertiary-fixed-dim: #f9bd22;
-  --color-on-tertiary-fixed: #261a00;
-  --color-on-tertiary-fixed-variant: #5c4300;
+  --color-tertiary-container: #f7b8de;
+  --color-on-tertiary-container: #5c1245;
+  --color-tertiary-fixed: #ffd8ec;
+  --color-tertiary-fixed-dim: #f2a8d6;
+  --color-on-tertiary-fixed: #390026;
+  --color-on-tertiary-fixed-variant: #6d2e57;
 
   --color-error: #ba1a1a;
   --color-on-error: #ffffff;
   --color-error-container: #ffdad6;
   --color-on-error-container: #93000a;
 
-  --color-background: #f7f9fb;
-  --color-on-background: #191c1e;
-  --color-surface: #f7f9fb;
-  --color-surface-dim: #d8dadc;
-  --color-surface-bright: #f7f9fb;
-  --color-on-surface: #191c1e;
-  --color-on-surface-variant: #3e4942;
-  --color-surface-variant: #e0e3e5;
+  --color-background: #faf7fb;
+  --color-on-background: #1f1720;
+  --color-surface: #faf7fb;
+  --color-surface-dim: #dcd3de;
+  --color-surface-bright: #faf7fb;
+  --color-on-surface: #1f1720;
+  --color-on-surface-variant: #4d4351;
+  --color-surface-variant: #e7dee9;
   --color-surface-container-lowest: #ffffff;
-  --color-surface-container-low: #f2f4f6;
-  --color-surface-container: #eceef0;
-  --color-surface-container-high: #e6e8ea;
-  --color-surface-container-highest: #e0e3e5;
-  --color-inverse-surface: #2d3133;
-  --color-inverse-on-surface: #eff1f3;
+  --color-surface-container-low: #f5eff6;
+  --color-surface-container: #efe7f1;
+  --color-surface-container-high: #e9e0eb;
+  --color-surface-container-highest: #e3dae5;
+  --color-inverse-surface: #342b37;
+  --color-inverse-on-surface: #f6eef8;
 
-  --color-outline: #6e7a71;
-  --color-outline-variant: #bdcac0;
+  --color-outline: #7a6d7e;
+  --color-outline-variant: #cbb9d0;
 
   --font-display: "Atkinson Hyperlegible Next", sans-serif;
   --font-body: "Inter", sans-serif;
@@ -70,7 +75,7 @@ body {
     "opsz" 24;
 }
 
-/* Typography scale ported from the Canoas Coleta+ design reference (Stitch mockups). */
+/* Typography scale ported from the original Canoas Coleta+ design reference (Stitch mockups). */
 .text-display-lg {
   font-family: var(--font-display);
   font-size: 32px;

@@ -1,6 +1,8 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
+import type { z } from "zod"
 import { CooperativeService } from "./cooperative.service"
 import type { JwtPayload } from "../../lib/jwt"
+import type { createCooperativeSchema, updateCooperativeSchema } from "./cooperative.schema"
 
 const service = new CooperativeService()
 
@@ -8,8 +10,7 @@ export class CooperativeController {
   async list(request: FastifyRequest, reply: FastifyReply) {
     const user = request.user as JwtPayload
     if (user.role === "admin") {
-      const coops = await service.findAll()
-      return reply.send(coops)
+      return reply.send(await service.findAll())
     }
     if (user.role === "user" || user.role === "cooperative_admin") {
       const coops = await service.findAll()
@@ -30,12 +31,16 @@ export class CooperativeController {
     return reply.send(coop)
   }
 
-  async create(request: FastifyRequest<{ Body: { name: string; cnpj?: string; phone?: string; address?: string; instagram?: string; website?: string } }>, reply: FastifyReply) {
+  async create(request: FastifyRequest<{ Body: z.infer<typeof createCooperativeSchema> }>, reply: FastifyReply) {
     const coop = await service.create(request.body)
     return reply.status(201).send(coop)
   }
 
-  async update(request: FastifyRequest<{ Params: { id: string }; Body: Partial<{ name: string; cnpj?: string; phone?: string; address?: string; instagram?: string; website?: string }> }>, reply: FastifyReply) {
+  async update(request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof updateCooperativeSchema> }>, reply: FastifyReply) {
+    const user = request.user as JwtPayload
+    if (user.role !== "admin" && request.params.id !== user.cooperativeId) {
+      return reply.status(403).send({ message: "Forbidden: can only edit your own cooperative" })
+    }
     const coop = await service.update(request.params.id, request.body)
     if (!coop) return reply.status(404).send({ message: "Cooperative not found" })
     return reply.send(coop)

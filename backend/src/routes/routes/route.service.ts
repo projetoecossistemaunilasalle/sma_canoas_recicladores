@@ -1,6 +1,18 @@
 import { eq, and, asc, sql, inArray } from "drizzle-orm"
 import { db } from "../../db"
-import { collectionRoutes, routeStreets, streets, type NewCollectionRoute, type NewRouteStreet } from "../../db/schema"
+import { collectionRoutes, routeStreets, streets, type NewCollectionRoute, type NewRouteStreet, type CollectionRoute } from "../../db/schema"
+import { scopeCondition } from "../../lib/db-scope"
+import { getTodayContext } from "../../lib/schedule"
+
+// Bounds how long after `startTime` a recurring route still counts as
+// "running now" — shifts have no explicit end time in the schema, so this
+// approximates one per shift. Without it, a route would read as "running"
+// for the rest of the day (even overnight) once its start time passed.
+const SHIFT_END_TIME: Record<string, string> = {
+  manha: "12:00:00",
+  tarde: "18:00:00",
+  noite: "23:59:59",
+}
 
 interface PlannedSegment {
   streetId: number
@@ -21,46 +33,68 @@ interface DijkstraLegRow {
 export class RouteService {
   // ==================== COLLECTION ROUTES ====================
   async findAll(filterCooperativeId?: string) {
-    if (filterCooperativeId) {
-      return db.select().from(collectionRoutes).where(eq(collectionRoutes.cooperativeId, filterCooperativeId))
-    }
-    return db.select().from(collectionRoutes)
+    const rows = await db.select().from(collectionRoutes).where(scopeCondition(undefined, collectionRoutes.cooperativeId, filterCooperativeId))
+    return this.withRunningStatus(rows)
   }
 
   async findById(id: string, filterCooperativeId?: string) {
-    let query = db.select().from(collectionRoutes).where(eq(collectionRoutes.id, id)).limit(1)
-    if (filterCooperativeId) {
-      query = db.select().from(collectionRoutes).where(and(eq(collectionRoutes.id, id), eq(collectionRoutes.cooperativeId, filterCooperativeId))).limit(1)
-    }
-    const [r] = await query
-    return r ?? null
+    const [r] = await db
+      .select()
+      .from(collectionRoutes)
+      .where(scopeCondition(eq(collectionRoutes.id, id), collectionRoutes.cooperativeId, filterCooperativeId))
+      .limit(1)
+    if (!r) return null
+    const [decorated] = await this.withRunningStatus([r])
+    return decorated
+  }
+
+  // Adds `isRunningNow`: true only while TODAY is one of the route's
+  // recurring days AND the current time falls inside its shift's window,
+  // starting at `startTime` — see SHIFT_END_TIME above. `status` itself
+  // (currently always "active" once a route is created — there's no
+  // start/stop action in this app yet) can't tell "scheduled" apart from
+  // "actually happening right now", so the dashboard's "Rotas em Andamento"
+  // count needs this instead of a raw status filter.
+  private async withRunningStatus<T extends Pick<CollectionRoute, "status" | "daysOfWeek" | "startTime" | "shift">>(
+    rows: T[]
+  ): Promise<(T & { isRunningNow: boolean })[]> {
+    if (rows.length === 0) return []
+    const { today, nowTime } = await getTodayContext()
+    return rows.map((r) => ({
+      ...r,
+      isRunningNow: Boolean(
+        r.status === "active" &&
+          r.daysOfWeek?.includes(today) &&
+          r.startTime &&
+          r.startTime <= nowTime &&
+          nowTime <= (SHIFT_END_TIME[r.shift ?? ""] ?? "23:59:59")
+      ),
+    }))
   }
 
   async create(data: NewCollectionRoute) {
     const [r] = await db.insert(collectionRoutes).values(data).returning()
-    return r
+    const [decorated] = await this.withRunningStatus([r])
+    return decorated
   }
 
   async update(id: string, data: Partial<NewCollectionRoute>, filterCooperativeId?: string) {
     const payload = { ...data, updatedAt: new Date() }
-    let query
-    if (filterCooperativeId) {
-      query = db.update(collectionRoutes).set(payload).where(and(eq(collectionRoutes.id, id), eq(collectionRoutes.cooperativeId, filterCooperativeId))).returning()
-    } else {
-      query = db.update(collectionRoutes).set(payload).where(eq(collectionRoutes.id, id)).returning()
-    }
-    const [r] = await query
-    return r ?? null
+    const [r] = await db
+      .update(collectionRoutes)
+      .set(payload)
+      .where(scopeCondition(eq(collectionRoutes.id, id), collectionRoutes.cooperativeId, filterCooperativeId))
+      .returning()
+    if (!r) return null
+    const [decorated] = await this.withRunningStatus([r])
+    return decorated
   }
 
   async delete(id: string, filterCooperativeId?: string) {
-    let query
-    if (filterCooperativeId) {
-      query = db.delete(collectionRoutes).where(and(eq(collectionRoutes.id, id), eq(collectionRoutes.cooperativeId, filterCooperativeId))).returning()
-    } else {
-      query = db.delete(collectionRoutes).where(eq(collectionRoutes.id, id)).returning()
-    }
-    const [r] = await query
+    const [r] = await db
+      .delete(collectionRoutes)
+      .where(scopeCondition(eq(collectionRoutes.id, id), collectionRoutes.cooperativeId, filterCooperativeId))
+      .returning()
     return r ?? null
   }
 
