@@ -61,6 +61,8 @@ const routeStatusLabels: Record<string, string> = {
   cancelled: "Cancelada",
 };
 
+console.log('hi')
+
 export function routeStatusLabel(status: string): string {
   return routeStatusLabels[status] ?? status;
 }
