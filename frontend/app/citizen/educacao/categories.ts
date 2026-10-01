@@ -14,7 +14,7 @@ export const RECYCLING_CATEGORIES: RecyclingCategory[] = [
     color: "#1E88E5",
     icon: "description",
     guidance:
-      "Jornais, revistas, papelão e caixas secos e limpos. Evite papel engordurado, plastificado ou sujo — esses vão pro lixo comum.",
+      "Jornais, revistas, papelão e caixas secas e limpas. Evite papel engordurado, plastificado ou sujo — esses vão pro lixo comum.",
   },
   {
     id: "plastico",
