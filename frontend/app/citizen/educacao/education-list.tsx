@@ -14,9 +14,28 @@ export function EducationList() {
   );
 
   return (
-    <div className="flex flex-col gap-4">
+    <section className="rounded-3xl bg-[#fff8df] border border-[#f1df9b] p-5 md:p-7">
+
+      {/* TÍTULO */}
+
+      <div className="mb-5">
+        <p className="text-sm font-semibold text-[#55733c] uppercase tracking-wide">
+          Informação
+        </p>
+
+        <h2 className="text-2xl font-bold text-on-surface mt-1">
+          Como reciclar?
+        </h2>
+
+        <p className="text-body-md text-on-surface-variant mt-2">
+          Veja como separar e descartar corretamente cada tipo de material.
+        </p>
+      </div>
+
       {/* BUSCA */}
-      <div className="flex items-center gap-2 bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/30 px-4 py-3">
+
+      <div className="flex items-center gap-2 bg-white rounded-2xl border border-[#e8dfc4] px-4 py-3 shadow-sm mb-5">
+
         <span className="material-symbols-outlined text-on-surface-variant text-[20px]">
           search
         </span>
@@ -27,51 +46,65 @@ export function EducationList() {
           placeholder="O que você quer reciclar?"
           className="flex-1 bg-transparent outline-none text-body-md text-on-surface placeholder:text-on-surface-variant"
         />
+
       </div>
 
-      {/* CATEGORIAS */}
-      <div className="grid grid-cols-2 gap-3">
-        {filtered.map((category) => (
-          <div
-            key={category.id}
-            className="col-span-2 sm:col-span-1 flex flex-col gap-3 rounded-2xl p-4 shadow-sm border border-outline-variant/30 bg-surface-container-lowest"
-          >
-            {/* CABEÇALHO */}
-            <div className="flex items-center gap-2">
-              <span
-                className="material-symbols-outlined text-[22px] rounded-full p-1.5"
-                style={{
-                  backgroundColor: `${category.color}22`,
-                  color: category.color,
-                }}
-              >
-                {category.icon}
-              </span>
+      {/* 8 MATERIAIS */}
 
-              <span className="text-label-lg text-on-surface">
-                {category.label}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+
+        {filtered.map((category) => (
+          <article
+            key={category.id}
+            className="bg-white rounded-2xl border border-[#eee5c7] p-5 shadow-sm flex flex-col"
+          >
+
+            {/* ÍCONE */}
+
+            <div
+              className="w-11 h-11 rounded-full flex items-center justify-center mb-4"
+              style={{
+                backgroundColor: `${category.color}18`,
+                color: category.color,
+              }}
+            >
+              <span className="material-symbols-outlined text-[22px]">
+                {category.icon}
               </span>
             </div>
 
+            {/* NOME */}
+
+            <h3 className="text-lg font-bold text-on-surface">
+              {category.label}
+            </h3>
+
             {/* DESCRIÇÃO */}
-            <p className="text-body-md text-on-surface-variant">
+
+            <p className="text-sm text-on-surface-variant mt-3 leading-6 flex-1">
               {category.guidance}
             </p>
 
-            {/* SAIBA MAIS */}
+            {/* LINK */}
+
             <Link
               href={`/citizen/educacao/${category.id}`}
-              className="text-sm font-semibold mt-1 inline-flex items-center gap-1 hover:underline"
-              style={{ color: category.color }}
+              className="mt-4 text-sm font-semibold inline-flex items-center gap-1"
+              style={{
+                color: "#55733c",
+              }}
             >
               Saiba mais
-              <span className="material-symbols-outlined text-[18px]">
-                arrow_forward
+              <span className="text-lg">
+                →
               </span>
             </Link>
-          </div>
+
+          </article>
         ))}
+
       </div>
-    </div>
+
+    </section>
   );
 }
