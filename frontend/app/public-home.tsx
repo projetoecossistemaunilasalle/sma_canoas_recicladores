@@ -3,21 +3,23 @@
 import { useEffect, useState } from "react";
 import PublicMapClient from "./public-map-client";
 import { AddressSearch } from "./address-search";
+import { AddressSideControls } from "./address-side-controls";
 import { AuthPanel } from "./auth-panel";
 import { BrandHeader } from "./brand-header";
 import { CollectionPanel } from "./collection-panel";
 import { useCollectionTracking } from "@/lib/use-collection-tracking";
+import { useAddressPin } from "@/lib/use-address-pin";
 import { getPublicCooperatives } from "@/lib/public-api";
 import type { GeocodeResult, PublicCooperativeSummary } from "@/lib/types";
 
 export function PublicHome() {
-  const [selected, setSelected] = useState<GeocodeResult | null>(null);
+  const addressPin = useAddressPin();
+  const { search, pin, street, side, value } = addressPin;
   const [followTruck, setFollowTruck] = useState(true);
   const [cooperatives, setCooperatives] = useState<PublicCooperativeSummary[]>([]);
-  const { result, truckPosition, heading, vehicle, path, stops } = useCollectionTracking(
-    selected?.lat ?? null,
-    selected?.lng ?? null
-  );
+  // Checks run only once the house is pinned and its side known — the
+  // searched street alone can't say which side/stretch the citizen is on.
+  const { result, truckPosition, heading, vehicle, path, stops } = useCollectionTracking(value);
 
   useEffect(() => {
     getPublicCooperatives()
@@ -26,19 +28,27 @@ export function PublicHome() {
   }, []);
 
   function handleSelect(address: GeocodeResult) {
-    setSelected(address);
+    addressPin.selectSearch(address);
     setFollowTruck(true);
   }
 
   function handleReset() {
-    setSelected(null);
+    addressPin.clear();
+    setFollowTruck(true);
+  }
+
+  function handleMapClick(lat: number, lng: number) {
+    void addressPin.placePin(lat, lng);
     setFollowTruck(true);
   }
 
   return (
     <div className="relative w-screen h-screen overflow-hidden">
       <PublicMapClient
-        addressPosition={selected}
+        addressPosition={pin}
+        focusPosition={search}
+        onMapClick={search ? handleMapClick : undefined}
+        pickedStreet={street ? { line: street.line, side } : null}
         truckPosition={truckPosition}
         truckHeading={heading}
         vehicle={vehicle}
@@ -56,11 +66,16 @@ export function PublicHome() {
           <AddressSearch
             onSelect={handleSelect}
             onClear={handleReset}
-            selectedLabel={selected?.label ?? null}
+            selectedLabel={search?.label ?? null}
           />
-          {selected && result ? (
+          {search ? (
+            <div className="w-full bg-surface-container-lowest rounded-2xl shadow-lg border border-outline-variant/30 p-4">
+              <AddressSideControls state={addressPin} />
+            </div>
+          ) : null}
+          {search && value && result ? (
             <div className="w-full pointer-events-auto">
-              <CollectionPanel address={selected.label} result={result} onReset={handleReset} />
+              <CollectionPanel address={search.label} result={result} onReset={handleReset} />
             </div>
           ) : null}
         </div>

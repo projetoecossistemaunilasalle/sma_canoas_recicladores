@@ -2,15 +2,16 @@
 
 import { useActionState, useState } from "react";
 import { register, type RegisterState } from "./actions";
-import { AddressSearch } from "../address-search";
-import type { GeocodeResult } from "@/lib/types";
+import { AddressPicker } from "../address-picker";
+import { useAddressPin } from "@/lib/use-address-pin";
 
 const initialState: RegisterState = {};
 
 export function RegisterForm() {
   const [state, formAction, pending] = useActionState(register, initialState);
   const [showPassword, setShowPassword] = useState(false);
-  const [address, setAddress] = useState<GeocodeResult | null>(null);
+  const addressPin = useAddressPin();
+  const address = addressPin.value;
 
   return (
     <form action={formAction} className="space-y-4">
@@ -74,15 +75,15 @@ export function RegisterForm() {
         <p className="text-label-lg text-on-surface-variant mb-2">
           Onde você mora? (opcional — necessário pra acompanhar sua coleta)
         </p>
-        <AddressSearch
-          onSelect={setAddress}
-          onClear={() => setAddress(null)}
-          selectedLabel={address?.label ?? null}
-        />
+        <AddressPicker state={addressPin} />
       </div>
       <input type="hidden" name="address" value={address?.label ?? ""} />
       <input type="hidden" name="lat" value={address?.lat ?? ""} />
       <input type="hidden" name="lng" value={address?.lng ?? ""} />
+      <input type="hidden" name="addressNumber" value={address?.number ?? ""} />
+      <input type="hidden" name="addressStreetId" value={address?.streetId ?? ""} />
+      <input type="hidden" name="addressSide" value={address?.side ?? ""} />
+      <input type="hidden" name="addressIncomplete" value={addressPin.incomplete ? "1" : ""} />
 
       {state.error ? (
         <p className="text-error text-label-lg" role="alert">

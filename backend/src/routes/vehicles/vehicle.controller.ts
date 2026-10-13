@@ -1,102 +1,72 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
-import type { z } from "zod"
-import { VehicleService } from "./vehicle.service"
-import type { JwtPayload } from "../../lib/jwt"
+import { VehicleService, type LoanResult } from "./vehicle.service"
 import { recordAndBroadcastPosition } from "../../lib/position-ingest"
-import { getCooperativeFilter, scopeCooperativeId } from "../../middleware/auth.middleware"
-import type { createVehicleSchema, updateVehicleSchema } from "./vehicle.schema"
+import { getCooperativeId } from "../../middleware/auth.middleware"
+import type { VehicleInput } from "./vehicle.schema"
 
 const service = new VehicleService()
 
+const LOAN_ERRORS: Record<NonNullable<LoanResult["error"]>, { status: number; message: string }> = {
+  not_found: { status: 404, message: "Vehicle not found" },
+  same_cooperative: { status: 400, message: "O veículo já pertence a essa cooperativa." },
+  already_loaned: {
+    status: 400,
+    message: "Este veículo já está emprestado. Encerre o empréstimo atual antes de emprestá-lo para outra cooperativa.",
+  },
+  not_loaned: { status: 400, message: "Este veículo não está emprestado." },
+  route_conflict: { status: 409, message: "Este veículo está vinculado a rotas de coleta." },
+}
+
+function sendLoanResult(result: LoanResult, reply: FastifyReply) {
+  if (!result.error) return reply.send(result.vehicle)
+  const { status, message } = LOAN_ERRORS[result.error]
+  return reply.status(status).send(result.routes ? { message, routes: result.routes } : { message })
+}
+
 export class VehicleController {
   async list(request: FastifyRequest, reply: FastifyReply) {
-    const filter = getCooperativeFilter(request)
-    const list = await service.findAll(filter)
-    return reply.send(list)
+    return reply.send(await service.findAll(getCooperativeId(request)))
   }
 
   async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-    const filter = getCooperativeFilter(request)
-    const v = await service.findById(request.params.id, filter)
+    const v = await service.findById(request.params.id, getCooperativeId(request))
     if (!v) return reply.status(404).send({ message: "Vehicle not found" })
     return reply.send(v)
   }
 
-  async create(request: FastifyRequest<{ Body: z.infer<typeof createVehicleSchema> }>, reply: FastifyReply) {
-    const currentUser = request.user as JwtPayload
-    const cooperativeId = scopeCooperativeId(currentUser, request.body.cooperativeId)
-    const v = await service.create({ ...request.body, cooperativeId })
-    return reply.status(201).send(v)
+  // Always owned by the caller's cooperative — ownership only changes hands
+  // through a loan, never through the vehicle form.
+  async create(request: FastifyRequest<{ Body: VehicleInput }>, reply: FastifyReply) {
+    return reply.status(201).send(await service.create({ ...request.body, cooperativeId: getCooperativeId(request) }))
   }
 
-  async update(request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof updateVehicleSchema> }>, reply: FastifyReply) {
-    const currentUser = request.user as JwtPayload
-    const filter = getCooperativeFilter(request)
-    if (currentUser.role === "cooperative_admin" && request.body.cooperativeId) {
-      delete request.body.cooperativeId
-    }
-    const v = await service.update(request.params.id, request.body, filter)
+  async update(request: FastifyRequest<{ Params: { id: string }; Body: VehicleInput }>, reply: FastifyReply) {
+    const v = await service.update(request.params.id, request.body, getCooperativeId(request))
     if (!v) return reply.status(404).send({ message: "Vehicle not found" })
     return reply.send(v)
   }
 
   async remove(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-    const filter = getCooperativeFilter(request)
-    const v = await service.delete(request.params.id, filter)
+    const v = await service.delete(request.params.id, getCooperativeId(request))
     if (!v) return reply.status(404).send({ message: "Vehicle not found" })
     return reply.status(204).send()
   }
 
-  async getPositions(request: FastifyRequest<{ Params: { id: string }; Querystring: { limit?: string } }>, reply: FastifyReply) {
-    const limit = request.query.limit ? parseInt(request.query.limit) : 50
-    const positions = await service.findPositions(request.params.id, limit)
-    return reply.send(positions)
-  }
-
-  async getLatestPosition(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
-    const pos = await service.findLatestPosition(request.params.id)
-    if (!pos) return reply.status(404).send({ message: "No position found" })
-    return reply.send(pos)
-  }
-
-  async createPosition(request: FastifyRequest<{ Params: { id: string }; Body: { location: string } }>, reply: FastifyReply) {
-    const pos = await recordAndBroadcastPosition(request.params.id, request.body.location)
-    return reply.status(201).send(pos)
-  }
-
-  async getEta(request: FastifyRequest<{ Params: { id: string }; Querystring: { lat: number; lng: number } }>, reply: FastifyReply) {
-    const eta = await service.getEta(request.params.id, request.query.lat, request.query.lng)
-    if (!eta) return reply.status(404).send({ message: "Vehicle not found or has no positions" })
-    return reply.send(eta)
+  // Manual GPS feed (testing/simulation; real trucks come in through the
+  // Multiportal sync) — only for a vehicle the caller drives.
+  async createPosition(request: FastifyRequest<{ Params: { id: string }; Body: { lat: number; lng: number } }>, reply: FastifyReply) {
+    const vehicle = await service.findVisible(request.params.id, getCooperativeId(request))
+    if (!vehicle) return reply.status(404).send({ message: "Vehicle not found" })
+    return reply.status(201).send(await recordAndBroadcastPosition(vehicle.id, request.body.lat, request.body.lng))
   }
 
   async loan(request: FastifyRequest<{ Params: { id: string }; Body: { cooperativeId: string; confirmUnlink?: boolean } }>, reply: FastifyReply) {
-    const filter = getCooperativeFilter(request)
-    const result = await service.loanTo(request.params.id, request.body.cooperativeId, request.body.confirmUnlink ?? false, filter)
-    switch (result.error) {
-      case "not_found":
-        return reply.status(404).send({ message: "Vehicle not found" })
-      case "same_cooperative":
-        return reply.status(400).send({ message: "O veículo já pertence a essa cooperativa." })
-      case "already_loaned":
-        return reply.status(400).send({ message: "Este veículo já está emprestado. Encerre o empréstimo atual antes de emprestá-lo para outra cooperativa." })
-      case "route_conflict":
-        return reply.status(409).send({ message: "Este veículo está vinculado a uma rota ativa.", routes: result.routes })
-    }
-    return reply.send(result.vehicle)
+    const { cooperativeId, confirmUnlink = false } = request.body
+    return sendLoanResult(await service.setLoan(request.params.id, cooperativeId, confirmUnlink, getCooperativeId(request)), reply)
   }
 
   async endLoan(request: FastifyRequest<{ Params: { id: string }; Body: { confirmUnlink?: boolean } }>, reply: FastifyReply) {
-    const filter = getCooperativeFilter(request)
-    const result = await service.returnLoan(request.params.id, request.body.confirmUnlink ?? false, filter)
-    switch (result.error) {
-      case "not_found":
-        return reply.status(404).send({ message: "Vehicle not found" })
-      case "not_loaned":
-        return reply.status(400).send({ message: "Este veículo não está emprestado." })
-      case "route_conflict":
-        return reply.status(409).send({ message: "Este veículo está vinculado a uma rota ativa na cooperativa que o pegou emprestado.", routes: result.routes })
-    }
-    return reply.send(result.vehicle)
+    const { confirmUnlink = false } = request.body
+    return sendLoanResult(await service.setLoan(request.params.id, null, confirmUnlink, getCooperativeId(request)), reply)
   }
 }

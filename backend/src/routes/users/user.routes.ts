@@ -2,17 +2,15 @@ import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { UserController } from "./user.controller"
 import {
-  createUserSchema,
-  updateUserSchema,
   userSchema,
   loginSchema,
-  loginResponseSchema,
+  authResponseSchema,
   registerSchema,
   updateProfileSchema,
   pushSubscriptionSchema,
 } from "./user.schema"
-import { errorResponseSchema, idParamSchema } from "../common.schema"
-import { requireAuth, requireStaff } from "../../middleware/auth.middleware"
+import { errorResponseSchema } from "../common.schema"
+import { requireAuth } from "../../middleware/auth.middleware"
 
 const controller = new UserController()
 
@@ -24,7 +22,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
         summary: "Login",
         tags: ["Auth"],
         body: loginSchema,
-        response: { 200: loginResponseSchema, 401: errorResponseSchema },
+        response: { 200: authResponseSchema, 401: errorResponseSchema },
       },
     },
     controller.login.bind(controller)
@@ -37,7 +35,7 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
         summary: "Public citizen self-registration",
         tags: ["Auth"],
         body: registerSchema,
-        response: { 201: loginResponseSchema, 409: errorResponseSchema },
+        response: { 201: authResponseSchema, 409: errorResponseSchema },
       },
     },
     controller.register.bind(controller)
@@ -75,10 +73,10 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
     {
       preHandler: requireAuth,
       schema: {
-        summary: "Save a Web Push subscription for the current user",
+        summary: "Save a Web Push subscription for the current user (turns proximity notifications on)",
         tags: ["Users"],
         body: pushSubscriptionSchema,
-        response: { 204: z.any() },
+        response: { 204: z.null() },
       },
     },
     controller.savePushSubscription.bind(controller)
@@ -89,82 +87,11 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
     {
       preHandler: requireAuth,
       schema: {
-        summary: "Remove a Web Push subscription for the current user",
+        summary: "Remove all of the current user's Web Push subscriptions (turns proximity notifications off)",
         tags: ["Users"],
-        body: z.object({ endpoint: z.string() }),
-        response: { 204: z.any() },
+        response: { 204: z.null() },
       },
     },
-    controller.deletePushSubscription.bind(controller)
-  )
-
-  server.get(
-    "/users",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "List users",
-        tags: ["Users"],
-        response: { 200: z.array(userSchema) },
-      },
-    },
-    controller.list.bind(controller)
-  )
-
-  server.get(
-    "/users/:id",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Get user by ID",
-        tags: ["Users"],
-        params: idParamSchema,
-        response: { 200: userSchema, 404: errorResponseSchema },
-      },
-    },
-    controller.getById.bind(controller)
-  )
-
-  server.post(
-    "/users",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Create user",
-        tags: ["Users"],
-        body: createUserSchema,
-        response: { 201: userSchema },
-      },
-    },
-    controller.create.bind(controller)
-  )
-
-  server.put(
-    "/users/:id",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Update user",
-        tags: ["Users"],
-        params: idParamSchema,
-        body: updateUserSchema,
-        response: { 200: userSchema, 404: errorResponseSchema },
-      },
-    },
-    controller.update.bind(controller)
-  )
-
-  server.delete(
-    "/users/:id",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Delete user",
-        tags: ["Users"],
-        params: idParamSchema,
-        response: { 204: z.any(), 404: errorResponseSchema },
-      },
-    },
-    controller.remove.bind(controller)
+    controller.deletePushSubscriptions.bind(controller)
   )
 }

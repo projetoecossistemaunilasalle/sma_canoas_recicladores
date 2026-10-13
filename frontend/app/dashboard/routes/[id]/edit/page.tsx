@@ -35,14 +35,10 @@ export default async function EditRoutePage({
           shift: route.shift ?? undefined,
           startTime: route.startTime?.slice(0, 5),
           stops: stops.map((s) => ({
-            id: s.streetId,
-            name: s.name,
-            geom: s.geom,
-            highwayType: null,
-            requiresCollection: null,
-            lengthKm: null,
-            source: null,
-            target: null,
+            street: { id: s.streetId, name: s.name, line: s.line },
+            side: s.side,
+            startFraction: s.startFraction,
+            endFraction: s.endFraction,
           })),
         }}
       />

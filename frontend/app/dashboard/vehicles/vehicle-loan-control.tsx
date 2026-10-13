@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useEffect, useId, useRef, useState } from "react";
-import { loanVehicleAction, returnVehicleLoanAction, type LoanFormState } from "./actions";
+import { vehicleLoanAction, type LoanFormState } from "./actions";
+import { routeScheduleLabel } from "@/lib/format";
 import type { Cooperative, ConflictingRoute, Vehicle } from "@/lib/types";
 
 const initialLoanState: LoanFormState = {};
@@ -26,7 +27,7 @@ export function VehicleLoanControl({
   const headingId = useId();
   const selectId = useId();
 
-  const action = loanedAtOpen ? returnVehicleLoanAction.bind(null, vehicle.id) : loanVehicleAction.bind(null, vehicle.id);
+  const action = vehicleLoanAction.bind(null, vehicle.id, !loanedAtOpen);
   const [state, formAction, pending] = useActionState(action, initialLoanState);
 
   const showSuccess = attempted && state.success;
@@ -101,7 +102,7 @@ export function VehicleLoanControl({
                 : "O veículo já aparece na frota da cooperativa que recebeu o empréstimo."}
               {unlinkedRoutes.length > 0
                 ? ` Ele foi removido ${unlinkedRoutes.length > 1 ? "das rotas" : "da rota"}: ${unlinkedRoutes
-                    .map((r) => r.label)
+                    .map(routeScheduleLabel)
                     .join(", ")}.`
                 : ""}
             </p>
@@ -178,7 +179,7 @@ export function VehicleLoanControl({
                 </p>
                 <ul className="list-disc list-inside text-body-md">
                   {state.conflictRoutes!.map((r) => (
-                    <li key={r.id}>{r.label}</li>
+                    <li key={r.id}>{routeScheduleLabel(r)}</li>
                   ))}
                 </ul>
                 <p className="text-body-md">

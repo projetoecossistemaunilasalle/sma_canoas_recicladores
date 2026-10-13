@@ -3,25 +3,21 @@ import { z } from "zod"
 import { RouteController } from "./route.controller"
 import {
   collectionRouteSchema,
-  createCollectionRouteSchema,
-  updateCollectionRouteSchema,
-  routeStreetSchema,
-  createRouteStreetSchema,
-  updateRouteStreetSchema,
+  routeInputSchema,
   routeStopSchema,
+  routePreviewInputSchema,
   routePreviewSegmentSchema,
 } from "./route.schema"
 import { errorResponseSchema, idParamSchema } from "../common.schema"
-import { requireStaff } from "../../middleware/auth.middleware"
+import { requireCooperativeAdmin } from "../../middleware/auth.middleware"
 
 const controller = new RouteController()
 
 export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
-  // ==================== COLLECTION ROUTES ====================
   server.get(
     "/routes",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
         summary: "List collection routes",
         tags: ["Routes"],
@@ -34,7 +30,7 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/routes/:id",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
         summary: "Get collection route by ID",
         tags: ["Routes"],
@@ -48,12 +44,12 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/routes",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Create collection route",
+        summary: "Create a route: schedule, vehicle and stops, path-found and saved in one transaction",
         tags: ["Routes"],
-        body: createCollectionRouteSchema,
-        response: { 201: collectionRouteSchema },
+        body: routeInputSchema,
+        response: { 201: collectionRouteSchema, 400: errorResponseSchema },
       },
     },
     controller.create.bind(controller)
@@ -62,13 +58,13 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.put(
     "/routes/:id",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Update collection route",
+        summary: "Replace a route's schedule, vehicle and stops, in one transaction",
         tags: ["Routes"],
         params: idParamSchema,
-        body: updateCollectionRouteSchema,
-        response: { 200: collectionRouteSchema, 404: errorResponseSchema },
+        body: routeInputSchema,
+        response: { 200: collectionRouteSchema, 400: errorResponseSchema, 404: errorResponseSchema },
       },
     },
     controller.update.bind(controller)
@@ -77,122 +73,40 @@ export const routeRoutes: FastifyPluginAsyncZod = async (server) => {
   server.delete(
     "/routes/:id",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
         summary: "Delete collection route",
         tags: ["Routes"],
         params: idParamSchema,
-        response: { 204: z.any(), 404: errorResponseSchema },
+        response: { 204: z.null(), 404: errorResponseSchema },
       },
     },
     controller.remove.bind(controller)
   )
 
-  // ==================== ROUTE STREETS ====================
-  server.get(
-    "/routes/:id/streets",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "List streets of a route",
-        tags: ["Routes"],
-        params: idParamSchema,
-        response: { 200: z.array(routeStreetSchema) },
-      },
-    },
-    controller.listStreets.bind(controller)
-  )
-
   server.get(
     "/routes/:id/stops",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "List only the streets originally picked as stops (not the auto-filled connectors)",
+        summary: "List only the streets picked as stops (not the auto-filled connectors)",
         tags: ["Routes"],
         params: idParamSchema,
-        response: { 200: z.array(routeStopSchema) },
+        response: { 200: z.array(routeStopSchema), 404: errorResponseSchema },
       },
     },
     controller.listStops.bind(controller)
   )
 
   server.post(
-    "/routes/:id/streets",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Add street to route",
-        tags: ["Routes"],
-        params: idParamSchema,
-        body: createRouteStreetSchema,
-        response: { 201: routeStreetSchema },
-      },
-    },
-    controller.addStreet.bind(controller)
-  )
-
-  server.put(
-    "/routes/:routeId/streets/:streetId",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Update route street",
-        tags: ["Routes"],
-        params: z.object({ routeId: z.string().uuid(), streetId: z.string().uuid() }),
-        body: updateRouteStreetSchema,
-        response: { 200: routeStreetSchema, 404: errorResponseSchema },
-      },
-    },
-    controller.updateStreet.bind(controller)
-  )
-
-  server.delete(
-    "/routes/:routeId/streets/:streetId",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Remove street from route",
-        tags: ["Routes"],
-        params: z.object({ routeId: z.string().uuid(), streetId: z.string().uuid() }),
-        response: { 204: z.any(), 404: errorResponseSchema },
-      },
-    },
-    controller.removeStreet.bind(controller)
-  )
-
-  // ==================== ROUTE PLANNING ====================
-  server.post(
-    "/routes/:id/plan",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Plan a route: path-find between chosen stop streets and materialize route_streets",
-        tags: ["Routes"],
-        params: idParamSchema,
-        body: z.object({ streetIds: z.array(z.number().int()).min(1) }),
-        response: {
-          200: z.array(routeStreetSchema),
-          400: errorResponseSchema,
-          404: errorResponseSchema,
-        },
-      },
-    },
-    controller.plan.bind(controller)
-  )
-
-  server.post(
     "/routes/preview",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Path-find between chosen stop streets without persisting — for live map preview",
+        summary: "Path-find between chosen stop streets without saving — for the live map preview",
         tags: ["Routes"],
-        body: z.object({ streetIds: z.array(z.number().int()).min(1) }),
-        response: {
-          200: z.array(routePreviewSegmentSchema),
-          400: errorResponseSchema,
-        },
+        body: routePreviewInputSchema,
+        response: { 200: z.array(routePreviewSegmentSchema), 400: errorResponseSchema },
       },
     },
     controller.preview.bind(controller)

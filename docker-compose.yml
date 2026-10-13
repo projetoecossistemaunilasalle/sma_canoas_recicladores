@@ -1,3 +1,5 @@
+# Only the database runs in Docker for development; the backend and frontend
+# run locally (`pnpm dev` / `npm run dev`) against it — see README.md.
 services:
   db:
     build:
@@ -20,34 +22,5 @@ services:
       retries: 5
       start_period: 10s
 
-  #backend:
-  #  build:
-  #    context: ./backend
-  #    dockerfile: Dockerfile
-  #  container_name: sma-canoas-backend
-  #  environment:
-  #    NODE_ENV: production
-  #    PORT: 3001
-  #    DATABASE_URL: postgresql://postgres:postgres@db:5432/recicladores?sslmode=disable
-  #  depends_on:
-  #    db:
-  #      condition: service_healthy
-  #  ports:
-  #    - "3001:3001"
-#
-  #frontend:
-  #  build:
-  #    context: ./frontend
-  #    dockerfile: Dockerfile
-  #  container_name: sma-canoas-frontend
-  #  environment:
-  #    NODE_ENV: production
-  #    PORT: 3000
-  #    NEXT_PUBLIC_API_URL: http://backend:3001
-  #  depends_on:
-  #    - backend
-  #  ports:
-  #    - "3000:3000"
-#
 volumes:
   postgres_data:

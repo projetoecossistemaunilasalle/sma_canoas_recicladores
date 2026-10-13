@@ -3,7 +3,7 @@
 import { useActionState, useState } from "react";
 import Link from "next/link";
 import { createVehicleAction, updateVehicleAction, type VehicleFormState } from "./actions";
-import type { Cooperative, Vehicle, VehicleType } from "@/lib/types";
+import type { Vehicle, VehicleType } from "@/lib/types";
 import {
   VEHICLE_COLORS,
   VEHICLE_TYPES,
@@ -14,13 +14,7 @@ import {
 
 const initialState: VehicleFormState = {};
 
-export function VehicleForm({
-  vehicle,
-  cooperatives,
-}: {
-  vehicle?: Vehicle;
-  cooperatives?: Cooperative[];
-}) {
+export function VehicleForm({ vehicle }: { vehicle?: Vehicle }) {
   const action = vehicle ? updateVehicleAction.bind(null, vehicle.id) : createVehicleAction;
   const [state, formAction, pending] = useActionState(action, initialState);
 
@@ -29,7 +23,6 @@ export function VehicleForm({
   const [type, setType] = useState<VehicleType>(vehicle?.type ?? "caminhao");
   const [color, setColor] = useState(vehicle?.color ?? "");
   const [active, setActive] = useState(vehicle?.active ?? true);
-  const cooperativeName = cooperatives?.find((c) => c.id === vehicle?.cooperativeId)?.name;
 
   return (
     <div className="flex flex-col lg:flex-row gap-6 items-start">
@@ -109,27 +102,6 @@ export function VehicleForm({
           </div>
         </div>
 
-        {cooperatives ? (
-          <div className="flex flex-col gap-2 sm:max-w-[calc(50%-0.75rem)]">
-            <label className="text-label-lg text-on-surface-variant" htmlFor="cooperativeId">
-              Cooperativa
-            </label>
-            <select
-              className="bg-surface-container-highest text-on-surface rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-primary"
-              id="cooperativeId"
-              name="cooperativeId"
-              defaultValue={vehicle?.cooperativeId ?? ""}
-            >
-              <option value="">Sem cooperativa</option>
-              {cooperatives.map((c) => (
-                <option key={c.id} value={c.id}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-          </div>
-        ) : null}
-
         <label className="flex items-center gap-3 cursor-pointer select-none">
           <input
             className="w-5 h-5 rounded accent-primary"
@@ -189,9 +161,6 @@ export function VehicleForm({
               {VEHICLE_TYPES.find((t) => t.value === type)?.label}
               {color ? ` · ${VEHICLE_COLORS.find((c) => c.value === color)?.label}` : ""}
             </p>
-            {cooperativeName ? (
-              <p className="text-body-md text-on-surface-variant">{cooperativeName}</p>
-            ) : null}
           </div>
           <span
             className={`text-[10px] uppercase px-2 py-0.5 rounded-full ${

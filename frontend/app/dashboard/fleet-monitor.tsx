@@ -1,12 +1,19 @@
 "use client";
 
 import { useMemo } from "react";
-import FleetMapClient from "./fleet-map-client";
+import dynamic from "next/dynamic";
+import { MapSkeleton } from "@/app/map-skeleton";
 import { useFleetTracking } from "@/lib/use-fleet-tracking";
 import { vehicleColorHex, vehicleTypeIcon, vehicleTypeLabel } from "@/lib/vehicle-options";
 import { relativeTime } from "@/lib/format";
 import type { VehicleType } from "@/lib/types";
 import type { FleetMapPoint } from "./fleet-map";
+
+// Leaflet needs `window` — see app/base-map.tsx.
+const FleetMap = dynamic(() => import("./fleet-map").then((m) => m.FleetMap), {
+  ssr: false,
+  loading: () => <MapSkeleton className="w-full h-80" />,
+});
 
 export interface FleetVehicleInfo {
   id: string;
@@ -55,7 +62,7 @@ export function FleetMonitor({ vehicles }: { vehicles: FleetVehicleInfo[] }) {
 
   return (
     <>
-      <FleetMapClient points={mapPoints} />
+      <FleetMap points={mapPoints} />
       {vehicles.length === 0 ? (
         <p className="text-body-md text-on-surface-variant py-6 text-center">
           Nenhum veículo cadastrado ainda.

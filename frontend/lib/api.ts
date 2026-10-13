@@ -1,4 +1,4 @@
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3001";
+import { BACKEND_URL } from "./constants";
 
 export class ApiError extends Error {
   status: number;
@@ -15,21 +15,17 @@ export class ApiError extends Error {
 }
 
 /**
- * Server-side fetch to the backend, always scoped by the caller's own JWT.
- * Every list/detail endpoint on the backend filters by the token's
- * cooperativeId, so passing the signed-in user's token is what enforces
- * per-cooperative isolation — never fetch with any token but the caller's own.
+ * Server-side fetch to the backend. Pass the signed-in user's own JWT —
+ * every list/detail endpoint filters by the token's cooperativeId, so that's
+ * what enforces per-cooperative isolation; never any token but the caller's.
+ * `null` only for the anonymous endpoints (login, register).
  */
-export async function apiFetch<T>(
-  path: string,
-  token: string,
-  init?: RequestInit
-): Promise<T> {
+export async function apiFetch<T>(path: string, token: string | null, init?: RequestInit): Promise<T> {
   const res = await fetch(`${BACKEND_URL}${path}`, {
     ...init,
     headers: {
       ...init?.headers,
-      Authorization: `Bearer ${token}`,
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       // Only set for requests with a body — Fastify's JSON parser rejects an
       // empty body sent with this header (e.g. plain DELETE calls).
       ...(init?.body ? { "Content-Type": "application/json" } : {}),

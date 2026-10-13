@@ -1,9 +1,7 @@
 "use client";
 
-import {
-  savePushSubscriptionAction,
-  deletePushSubscriptionAction,
-} from "@/app/citizen/actions";
+import { useState } from "react";
+import { savePushSubscriptionAction, deletePushSubscriptionsAction } from "@/app/citizen/actions";
 
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
@@ -20,7 +18,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return outputArray;
 }
 
-export async function subscribeToPush(): Promise<boolean> {
+async function subscribeToPush(): Promise<boolean> {
   if (!("serviceWorker" in navigator) || !("PushManager" in window) || !VAPID_PUBLIC_KEY) {
     return false;
   }
@@ -49,15 +47,39 @@ export async function subscribeToPush(): Promise<boolean> {
   return ok;
 }
 
-export async function unsubscribeFromPush(): Promise<boolean> {
-  if (!("serviceWorker" in navigator)) return false;
-
-  const registration = await navigator.serviceWorker.getRegistration();
-  const subscription = await registration?.pushManager.getSubscription();
-  if (!subscription) return true;
-
-  const endpoint = subscription.endpoint;
-  await subscription.unsubscribe();
-  const { ok } = await deletePushSubscriptionAction(endpoint);
+async function unsubscribeFromPush(): Promise<boolean> {
+  const registration = "serviceWorker" in navigator ? await navigator.serviceWorker.getRegistration() : undefined;
+  await (await registration?.pushManager.getSubscription())?.unsubscribe();
+  const { ok } = await deletePushSubscriptionsAction();
   return ok;
+}
+
+/**
+ * The "warn me when the truck is close" switch (profile and Minha Coleta).
+ * It's on while the account has a push subscription — subscribing this
+ * browser turns it on, and turning it off drops every device's.
+ */
+export function useProximityNotifications(initiallyOn: boolean) {
+  const [on, setOn] = useState(initiallyOn);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function toggle() {
+    setError(null);
+    setPending(true);
+    try {
+      if (on) {
+        if (await unsubscribeFromPush()) setOn(false);
+        else setError("Não foi possível desligar os avisos. Tente de novo.");
+      } else if (await subscribeToPush()) {
+        setOn(true);
+      } else {
+        setError("Ative as notificações do navegador pra usar esse recurso.");
+      }
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return { on, pending, error, toggle };
 }

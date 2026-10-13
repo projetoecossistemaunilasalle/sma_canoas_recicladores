@@ -16,31 +16,27 @@ export const SHIFTS: { value: Shift; label: string }[] = [
   { value: "noite", label: "Noite" },
 ];
 
-export function dayOfWeekLabel(value: string): string {
+function dayOfWeekLabel(value: string): string {
   return DAYS_OF_WEEK.find((d) => d.value === value)?.label ?? value;
 }
 
-export function shiftLabel(value: string): string {
+function shiftLabel(value: string): string {
   return SHIFTS.find((s) => s.value === value)?.label ?? value;
 }
 
-export function parseWktPoint(wkt: string): { lat: number; lng: number } | null {
-  const match = /POINT\(\s*(-?[\d.]+)\s+(-?[\d.]+)\s*\)/i.exec(wkt);
-  if (!match) return null;
-  const [, lng, lat] = match;
-  return { lat: Number(lat), lng: Number(lng) };
-}
-
-export function parseWktLineString(wkt: string): [number, number][] {
-  const match = /LINESTRING\(([^)]+)\)/i.exec(wkt);
-  if (!match) return [];
-  return match[1]
-    .split(",")
-    .map((pair) => {
-      const [lng, lat] = pair.trim().split(/\s+/).map(Number);
-      return [lat, lng] as [number, number];
-    })
-    .filter(([lat, lng]) => Number.isFinite(lat) && Number.isFinite(lng));
+/** "Seg, Qua · Manhã · 08:00" — days in week order, whatever order they were picked in. */
+export function routeScheduleLabel(route: {
+  daysOfWeek: string[] | null;
+  shift: string | null;
+  startTime?: string | null;
+}): string {
+  const order = DAYS_OF_WEEK.map((d) => d.value as string);
+  const days = [...(route.daysOfWeek ?? [])].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  return [
+    days.map(dayOfWeekLabel).join(", ") || "Sem dias",
+    route.shift ? shiftLabel(route.shift) : "Sem turno",
+    ...(route.startTime ? [formatTime(route.startTime)] : []),
+  ].join(" · ");
 }
 
 export function relativeTime(isoDate: string): string {
@@ -54,29 +50,17 @@ export function relativeTime(isoDate: string): string {
   return `há ${diffDays}d`;
 }
 
-const routeStatusLabels: Record<string, string> = {
-  planned: "Planejada",
-  active: "Em andamento",
-  completed: "Concluída",
-  cancelled: "Cancelada",
-};
-
-
-
-export function routeStatusLabel(status: string): string {
-  return routeStatusLabels[status] ?? status;
+// `isRunningNow` is the backend's schedule-based signal: today is one of the
+// route's days and the time is inside its shift.
+export function routeLiveStatusLabel(route: { isRunningNow: boolean }): string {
+  return route.isRunningNow ? "Rodando agora" : "Agendada";
 }
 
-// Every route sits at status "active" from creation onward (there's no
-// start/stop action in this app), so routeStatusLabel("active") alone reads
-// as "Em andamento" for routes that aren't actually running right now —
-// the same ambiguity as the raw status. Callers with `isRunningNow` (the
-// backend's real schedule-based signal) should use this instead so only the
-// route genuinely running now gets that label.
-export function routeLiveStatusLabel(route: { status: string; isRunningNow: boolean }): string {
-  if (route.isRunningNow) return "Rodando agora";
-  if (route.status === "active") return "Agendada";
-  return routeStatusLabel(route.status);
+// ["Centro"] -> "Centro"; ["Centro", "Fátima"] -> "Centro e Fátima";
+// a long avenue's 6 bairros -> "Centro, Fátima e mais 4"
+export function neighborhoodsLabel(names: string[]): string {
+  if (names.length <= 2) return names.join(" e ");
+  return `${names.slice(0, 2).join(", ")} e mais ${names.length - 2}`;
 }
 
 // "09:12:00" -> "09:12"

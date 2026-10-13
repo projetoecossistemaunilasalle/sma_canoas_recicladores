@@ -1,33 +1,41 @@
 import { z } from "zod"
+import { weekdaySchema } from "../../lib/weekdays"
 
 export const vehicleTypeSchema = z.enum(["caminhao", "bicicleta"])
 
-export const vehicleSchema = z.object({
-  id: z.string().uuid(),
-  plate: z.string().nullable().optional(),
-  model: z.string().nullable().optional(),
-  color: z.string().nullable().optional(),
-  type: vehicleTypeSchema.default("caminhao"),
-  cooperativeId: z.string().uuid().nullable().optional(),
-  loanedToCooperativeId: z.string().uuid().nullable().optional(),
-  active: z.boolean().default(true),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+export const positionSchema = z.object({
+  lat: z.number(),
+  lng: z.number(),
+  recordedAt: z.date(),
 })
 
-export const createVehicleSchema = z.object({
+export const vehicleSchema = z.object({
+  id: z.uuid(),
+  plate: z.string().nullable(),
+  model: z.string().nullable(),
+  color: z.string().nullable(),
+  type: vehicleTypeSchema,
+  cooperativeId: z.uuid(),
+  loanedToCooperativeId: z.uuid().nullable(),
+  active: z.boolean(),
+})
+
+// The fleet list carries each vehicle's latest GPS fix, so the dashboard
+// doesn't fetch it per vehicle.
+export const vehicleWithPositionSchema = vehicleSchema.extend({
+  lastPosition: positionSchema.nullable(),
+})
+
+export const vehicleInputSchema = z.object({
   plate: z.string().optional(),
   model: z.string().optional(),
   color: z.string().optional(),
   type: vehicleTypeSchema.optional(),
-  cooperativeId: z.string().uuid().optional(),
   active: z.boolean().optional(),
 })
 
-export const updateVehicleSchema = createVehicleSchema.partial()
-
 export const loanVehicleSchema = z.object({
-  cooperativeId: z.string().uuid(),
+  cooperativeId: z.uuid(),
   confirmUnlink: z.boolean().optional(),
 })
 
@@ -35,35 +43,22 @@ export const endLoanSchema = z.object({
   confirmUnlink: z.boolean().optional(),
 })
 
+// 409 when lending/returning a vehicle that routes still use — the client
+// lists them (in its own words) and can retry with confirmUnlink.
 export const routeConflictSchema = z.object({
   message: z.string(),
-  routes: z.array(z.object({ id: z.string().uuid(), label: z.string() })),
-})
-
-export const vehiclePositionSchema = z.object({
-  id: z.string().uuid(),
-  vehicleId: z.string().uuid(),
-  location: z.string(),
-  recordedAt: z.date(),
+  routes: z.array(
+    z.object({
+      id: z.uuid(),
+      daysOfWeek: z.array(weekdaySchema).nullable(),
+      shift: z.string().nullable(),
+    })
+  ),
 })
 
 export const createPositionSchema = z.object({
-  location: z.string(),
+  lat: z.number(),
+  lng: z.number(),
 })
 
-export const etaQuerySchema = z.object({
-  lat: z.coerce.number(),
-  lng: z.coerce.number(),
-})
-
-export const etaSchema = z.object({
-  status: z.enum(["sem_rota", "na_rua", "passou", "nao_esta_na_rota", "chegando"]),
-  etaSeconds: z.number(),
-  etaText: z.string(),
-  distanceKm: z.number(),
-  streetsRemaining: z.number(),
-  currentStreet: z.string().nullable(),
-  citizenStreet: z.string().nullable(),
-  path: z.array(z.object({ lat: z.number(), lng: z.number() })),
-  stops: z.array(z.object({ streetId: z.number(), name: z.string().nullable(), lat: z.number(), lng: z.number() })),
-})
+export type VehicleInput = z.infer<typeof vehicleInputSchema>

@@ -3,13 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { checkCollectionForAddress } from "@/lib/public-api";
-import type { CollectionCheckResult } from "@/lib/types";
+import type { AddressPoint, CollectionCheckResult } from "@/lib/types";
 import { formatTime, weekdayLabelFromOffset } from "@/lib/format";
 
 function summaryText(result: CollectionCheckResult): string {
   switch (result.status) {
     case "no_route":
       return "Nenhuma rota de coleta encontrada para o seu endereço.";
+    case "other_side_only":
+      return "A coleta passa na sua rua, mas só do outro lado.";
     case "scheduled_future":
       return `Próxima coleta ${weekdayLabelFromOffset(result.daysAhead)} às ${formatTime(result.startTime)}.`;
     case "scheduled_today":
@@ -23,14 +25,15 @@ function summaryText(result: CollectionCheckResult): string {
   }
 }
 
-export function CitizenHomeSummary({ lat, lng }: { lat: number; lng: number }) {
+export function CitizenHomeSummary({ point }: { point: AddressPoint }) {
   const [result, setResult] = useState<CollectionCheckResult | null>(null);
+  const { lat, lng, streetId, side } = point;
 
   useEffect(() => {
-    checkCollectionForAddress(lat, lng)
+    checkCollectionForAddress({ lat, lng, streetId, side })
       .then(setResult)
       .catch(() => setResult(null));
-  }, [lat, lng]);
+  }, [lat, lng, streetId, side]);
 
   if (!result) return null;
 

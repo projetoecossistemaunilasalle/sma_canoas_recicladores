@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs"
 import { XMLParser } from "fast-xml-parser"
 import { sql } from "drizzle-orm"
 import { db } from "./index"
+import { assignStreetNeighborhoods } from "./street-neighborhoods"
 
 // Average urban speed per OSM highway type, used to turn length into a
 // travel-time cost (seconds) for pgRouting. Rough defaults, not measured.
@@ -176,6 +177,10 @@ async function main() {
 
   console.log("Clearing existing streets...")
   await db.execute(sql`TRUNCATE TABLE route_streets, streets RESTART IDENTITY CASCADE`)
+  // Street ids restart from 1, so every citizen's confirmed segment/side now
+  // points at an unrelated street. Clear them — the citizen screens then ask
+  // them to re-place their house pin (their lat/lng is kept).
+  await db.execute(sql`UPDATE users SET address_street_id = NULL, address_side = NULL`)
 
   console.log("Inserting...")
   const BATCH = 500
@@ -207,6 +212,18 @@ async function main() {
   }
   await db.execute(sql`UPDATE streets SET cost = (length_km / 20) * 3600 WHERE cost IS NULL`)
   await db.execute(sql`UPDATE streets SET reverse_cost = CASE WHEN oneway THEN -1 ELSE cost END`)
+
+  // A DB that predates 008-neighborhoods.sql (initdb only runs on an empty
+  // volume) has no bairros yet — skip rather than fail the deploy.
+  const hasNeighborhoods = await db.execute<{ ok: boolean }>(
+    sql`SELECT to_regclass('neighborhoods') IS NOT NULL AS ok`
+  )
+  if (hasNeighborhoods.rows[0]?.ok) {
+    console.log("Assigning streets to bairros...")
+    await assignStreetNeighborhoods(db)
+  } else {
+    console.log("No neighborhoods table — skipping bairros (apply 008-neighborhoods.sql, then neighborhoods:import).")
+  }
 
   console.log("Done.")
   process.exit(0)

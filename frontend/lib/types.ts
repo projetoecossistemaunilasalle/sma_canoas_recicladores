@@ -1,197 +1,80 @@
-export interface CurrentUser {
-  id: string;
-  name: string;
-  email: string;
-  role: string;
-  active: boolean;
-  cooperativeId: string | null;
-  address: string | null;
-  addressLat: number | null;
-  addressLng: number | null;
-  notifyProximity: boolean;
-}
+import type { paths } from "./api-types";
 
-export interface Cooperative {
-  id: string;
-  name: string;
-  cnpj: string | null;
-  phone: string | null;
-  address: string | null;
-  instagram: string | null;
-  website: string | null;
-  lat: number | null;
-  lng: number | null;
-  active: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+// ---- Backend API shapes ----
+// Straight from the backend's OpenAPI document — lib/api-types.ts is
+// generated (`pnpm openapi` in backend/, then `npm run api:types` here), so
+// these can't drift from what the API actually sends and accepts.
 
-// Narrower directory info shown on the anonymous pre-login public map — no
-// cnpj/active/timestamps, mirrors PublicVehicleSummary's narrowing.
-export interface PublicCooperativeSummary {
-  id: string;
-  name: string;
-  address: string | null;
-  phone: string | null;
-  instagram: string | null;
-  lat: number;
-  lng: number;
-}
+type JsonOf<T> = T extends { content: { "application/json": infer Body } } ? Body : never;
+type ApiResponse<P extends keyof paths, M extends keyof paths[P], Status extends number = 200> =
+  paths[P][M] extends { responses: infer R } ? (Status extends keyof R ? JsonOf<R[Status]> : never) : never;
+type ApiBody<P extends keyof paths, M extends keyof paths[P]> =
+  paths[P][M] extends { requestBody?: infer B } ? JsonOf<NonNullable<B>> : never;
 
-export type AnnouncementType = "aviso" | "noticia";
+export type CurrentUser = ApiResponse<"/me", "get">;
+export type UpdateProfileInput = ApiBody<"/me", "put">;
+export type RegisterInput = ApiBody<"/register", "post">;
+export type AuthResponse = ApiResponse<"/login", "post">;
+export type PushSubscriptionInput = ApiBody<"/me/push-subscription", "post">;
 
-export interface Announcement {
-  id: string;
-  cooperativeId: string;
-  cooperativeName: string;
-  type: AnnouncementType;
-  title: string | null;
-  body: string;
-  mainImage: string | null;
-  subImage1: string | null;
-  subImage2: string | null;
-  createdAt: string;
-}
+export type Cooperative = ApiResponse<"/cooperatives/{id}", "get">;
+export type CooperativeInput = ApiBody<"/cooperatives/{id}", "put">;
+export type PublicCooperativeSummary = ApiResponse<"/public/cooperatives", "get">[number];
 
-export type VehicleType = "caminhao" | "bicicleta";
+export type Announcement = ApiResponse<"/announcements", "get">[number];
+export type AnnouncementType = Announcement["type"];
+export type AnnouncementInput = ApiBody<"/announcements", "post">;
 
-export interface Vehicle {
-  id: string;
-  plate: string | null;
-  model: string | null;
-  color: string | null;
-  type: VehicleType;
-  cooperativeId: string | null;
-  loanedToCooperativeId: string | null;
-  active: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+export type Vehicle = ApiResponse<"/vehicles/{id}", "get">;
+/** A vehicle as the fleet list returns it — with its latest GPS fix. */
+export type FleetVehicle = ApiResponse<"/vehicles", "get">[number];
+export type VehicleType = Vehicle["type"];
+export type VehicleInput = ApiBody<"/vehicles", "post">;
+/** A route still using a vehicle that's being lent or returned (the 409 body). */
+export type ConflictingRoute = ApiResponse<"/vehicles/{id}/loan", "post", 409>["routes"][number];
 
-export interface ConflictingRoute {
-  id: string;
-  label: string;
-}
+export type CollectionRoute = ApiResponse<"/routes/{id}", "get">;
+export type DayOfWeek = NonNullable<CollectionRoute["daysOfWeek"]>[number];
+export type Shift = NonNullable<CollectionRoute["shift"]>;
+export type RouteInput = ApiBody<"/routes", "post">;
+export type RouteStopInput = Required<RouteInput["stops"][number]>;
+export type RouteStop = ApiResponse<"/routes/{id}/stops", "get">[number];
+export type RoutePreviewSegment = ApiResponse<"/routes/preview", "post">[number];
+export type Street = ApiResponse<"/streets/{id}", "get">;
+/** Which side of a stop a route collects — relative to the segment's own direction (source→target). */
+export type CollectionSide = RouteStop["side"];
 
-export interface VehiclePosition {
-  id: string;
-  vehicleId: string;
-  location: string; // WKT, e.g. "POINT(lng lat)"
-  recordedAt: string;
-}
+/** A street from /public/geocode (street-level only — no house numbers). */
+export type GeocodeResult = ApiResponse<"/public/geocode", "get">[number];
+/** The segment a house pin sits on. `side` is only a suggestion (null = pin on the centerline). */
+export type AddressStreet = ApiResponse<"/public/address-street", "get">;
+/** Which side of a segment a citizen's house is on. */
+export type HouseSide = NonNullable<AddressStreet["side"]>;
+export type CollectionCheckResult = ApiResponse<"/public/collection-check", "get">;
+export type PublicVehicleSummary = Extract<CollectionCheckResult, { status: "scheduled_today" }>["vehicle"];
 
-export type DayOfWeek = "seg" | "ter" | "qua" | "qui" | "sex" | "sab" | "dom";
-export type Shift = "manha" | "tarde" | "noite";
-
-export interface CollectionRoute {
-  id: string;
-  vehicleId: string | null;
-  cooperativeId: string | null;
-  status: string;
-  totalDistanceKm: number | null;
-  totalDurationSeconds: number | null;
-  scheduledDate: string | null;
-  daysOfWeek: DayOfWeek[] | null;
-  shift: Shift | null;
-  startTime: string | null;
-  startedAt: string | null;
-  completedAt: string | null;
-  createdAt?: string;
-  isRunningNow: boolean;
-}
-
-export interface Street {
-  id: number;
-  name: string | null;
-  geom: string; // WKT LineString
-  highwayType: string | null;
-  requiresCollection: boolean | null;
-  lengthKm: number | null;
-  source: number | null;
-  target: number | null;
-}
-
-export interface RouteStreet {
-  id: string;
-  routeId: string;
-  streetId: number;
-  stopOrder: number;
-  direction: string;
-  distanceFromPreviousKm: number | null;
-  durationFromPreviousSeconds: number | null;
-}
-
-export interface RoutePreviewSegment {
-  streetId: number;
-  isStop: boolean;
-  name: string | null;
-  geom: string;
-}
-
-export interface RouteStop {
-  streetId: number;
-  stopOrder: number;
-  name: string | null;
-  geom: string; // WKT LineString
-}
-
-// Public home (unauthenticated) tracking — see backend/src/routes/public-tracking.
-
-export interface GeocodeResult {
-  label: string;
-  lat: number;
-  lng: number;
-}
-
-export interface PublicVehicleSummary {
-  id: string;
-  plate: string | null;
-  model: string | null;
-  color: string | null;
-  type: VehicleType;
-}
-
-export interface PublicVehiclePosition {
-  lat: number;
-  lng: number;
-  recordedAt: string;
-}
+// ---- Frontend-only shapes ----
 
 export interface LatLng {
   lat: number;
   lng: number;
 }
 
-export type CollectionCheckResult =
-  | { status: "no_route"; street?: string | null }
-  | {
-      status: "scheduled_future";
-      street: string | null;
-      daysAhead: number;
-      startTime: string;
-      vehicle: PublicVehicleSummary;
-    }
-  | {
-      status: "scheduled_today";
-      street: string | null;
-      startTime: string;
-      vehicle: PublicVehicleSummary;
-    }
-  | {
-      status: "arriving";
-      street: string | null;
-      etaStatus: "na_rua" | "chegando";
-      etaSeconds: number;
-      etaText: string;
-      distanceKm: number;
-      vehicle: PublicVehicleSummary;
-      position: PublicVehiclePosition | null;
-      path: LatLng[];
-      stops: { streetId: number; name: string | null; lat: number; lng: number }[];
-    }
-  | {
-      status: "passed";
-      street: string | null;
-      vehicle: PublicVehicleSummary;
-      passedApproxAt: string | null;
-    };
+/** A point as [lat, lng] — Leaflet's order, and how the API sends street lines. */
+export type LatLngTuple = [number, number];
+
+/** A house pin plus the segment and side the citizen confirmed for it — what collection checks run on. */
+export interface AddressPoint {
+  lat: number;
+  lng: number;
+  streetId: number;
+  side: HouseSide;
+}
+
+/** Everything the address picker collects for a citizen's address. */
+export interface CitizenAddress extends AddressPoint {
+  label: string;
+  number: string | null;
+  streetName: string | null;
+  streetLine: LatLngTuple[];
+}

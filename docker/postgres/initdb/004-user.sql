@@ -1,19 +1,37 @@
 CREATE TABLE IF NOT EXISTS users (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
-    email TEXT UNIQUE NOT NULL,
-    password TEXT NOT NULL,
-    role TEXT NOT NULL DEFAULT 'user',
+    -- Sempre minúsculo (a API normaliza): sem isso "Admin@x.com" e
+    -- "admin@x.com" viram duas contas.
+    email TEXT UNIQUE NOT NULL CHECK (email = lower(email)),
+    password TEXT NOT NULL, -- hash argon2id (gerar com `pnpm password:hash` no backend)
+    -- 'user' = munícipe (cadastro público no app); 'cooperative_admin' = quem
+    -- usa o painel de uma cooperativa. Não há administrador geral: cooperativas
+    -- e seus admins são criados direto no banco por quem mantém o sistema.
+    role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'cooperative_admin')),
     active BOOLEAN NOT NULL DEFAULT TRUE,
     cooperative_id UUID REFERENCES cooperatives(id),
+    -- Endereço do munícipe: address_lat/lng é o pin que ele põe em cima da
+    -- casa; o trecho e o lado são confirmados por ele na tela e comparados
+    -- direto com route_streets.street_id/side. Os quatro vêm juntos ou
+    -- nenhum. Sem FK para streets de propósito: import-streets faz TRUNCATE
+    -- streets ... CASCADE, e uma FK aqui faria esse TRUNCATE apagar users.
     address TEXT,
+    address_number TEXT,
     address_lat DOUBLE PRECISION,
     address_lng DOUBLE PRECISION,
-    notify_proximity BOOLEAN NOT NULL DEFAULT FALSE,
+    address_street_id INTEGER,
+    address_side TEXT CHECK (address_side IN ('left', 'right')),
+    -- Último dia em que o aviso de "caminhão chegando" foi enviado — um por
+    -- coleta, e sobrevive a um restart do backend.
+    proximity_notified_on DATE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    -- Admin de cooperativa sempre tem a sua; munícipe nunca tem.
+    CONSTRAINT users_cooperative_matches_role CHECK ((role = 'cooperative_admin') = (cooperative_id IS NOT NULL))
 );
 
+-- Ter ao menos uma inscrição é o que liga o aviso de proximidade.
 CREATE TABLE IF NOT EXISTS push_subscriptions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -22,20 +40,3 @@ CREATE TABLE IF NOT EXISTS push_subscriptions (
     auth TEXT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-INSERT INTO users (name, email, password, role, cooperative_id)
-VALUES
-    ('Admin', 'admin@Coopcamate.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','cooperative_admin', (SELECT id FROM cooperatives WHERE name = 'Coopcamate')),
-    ('Admin', 'admin@Renascer.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','cooperative_admin', (SELECT id FROM cooperatives WHERE name = 'Renascer')),
-    ('Admin', 'admin@Cooarlas.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','cooperative_admin', (SELECT id FROM cooperatives WHERE name = 'Cooarlas')),
-    ('Admin', 'admin@Coopermag.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','cooperative_admin', (SELECT id FROM cooperatives WHERE name = 'Coopermag')),
-    ('Admin', 'admin@Coopersol.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','cooperative_admin', (SELECT id FROM cooperatives WHERE name = 'Coopersol')),
-    ('Admin', 'admin@CMGC.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','cooperative_admin', (SELECT id FROM cooperatives WHERE name = 'CMGC')),
-    ('Admin', 'admin@Coopertec.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','cooperative_admin', (SELECT id FROM cooperatives WHERE name = 'Coopertec')),
-    ('Admin', 'admin@MaosDadas.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','cooperative_admin', (SELECT id FROM cooperatives WHERE name = 'Mãos Dadas'))
-ON CONFLICT (email) DO NOTHING;
-
-INSERT INTO users (name, email, password, role)
-VALUES
-    ('User', 'user@example.com', '$argon2id$v=19$m=65536,p=4,t=3$+9xA1MMYCUWRBcwygam1CQ$V/dfMDl5tPzs+hQW9uTkPDabNQ+d+2OV0VEkd7BeNeA','user')
-ON CONFLICT (email) DO NOTHING;

@@ -1,15 +1,11 @@
 "use client";
 
 import { useEffect, useMemo } from "react";
-import { MapContainer, TileLayer, Marker, Popup, useMap } from "react-leaflet";
+import { Marker, Popup, useMap } from "react-leaflet";
 import L from "leaflet";
-import "leaflet/dist/leaflet.css";
-import { vehicleColorHex, vehicleIconTextColor, vehicleTypeIcon } from "@/lib/vehicle-options";
-import { CANOAS_CENTER } from "@/lib/geo";
-import { ensureLeafletDefaultIcon } from "@/lib/leaflet-default-icon";
+import { BaseMap } from "@/app/base-map";
+import { vehicleDivIcon } from "@/lib/map-icons";
 import type { VehicleType } from "@/lib/types";
-
-ensureLeafletDefaultIcon();
 
 export interface FleetMapPoint {
   id: string;
@@ -19,23 +15,6 @@ export interface FleetMapPoint {
   lng: number;
   color: string | null;
   type: VehicleType;
-}
-
-// One colored pin per vehicle — fill from vehicle.color, glyph from vehicle.type
-// — so the fleet map reads at a glance instead of every truck being the same blue pin.
-function vehicleDivIcon(color: string | null, type: VehicleType) {
-  const fill = vehicleColorHex(color);
-  const glyph = vehicleTypeIcon(type);
-  const textColor = vehicleIconTextColor(color);
-  return L.divIcon({
-    className: "",
-    html: `<div style="width:32px;height:32px;border-radius:50%;background:${fill};border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;">
-      <span class="material-symbols-outlined" style="font-size:18px;color:${textColor};line-height:1;">${glyph}</span>
-    </div>`,
-    iconSize: [32, 32],
-    iconAnchor: [16, 16],
-    popupAnchor: [0, -16],
-  });
 }
 
 function FitBounds({ points }: { points: FleetMapPoint[] }) {
@@ -57,24 +36,16 @@ function FitBounds({ points }: { points: FleetMapPoint[] }) {
 // Purely presentational — the caller (FleetMonitor) owns the live-tracking
 // WebSocket and passes already-current lat/lng in `points`, so both the map
 // and the vehicle list below it stay in sync off one shared connection.
+// One pin per vehicle, in its color with its type's glyph, so the fleet reads
+// at a glance instead of every truck being the same pin.
 export function FleetMap({ points }: { points: FleetMapPoint[] }) {
-  const icons = useMemo(() => {
-    const map = new Map<string, L.DivIcon>();
-    for (const p of points) map.set(p.id, vehicleDivIcon(p.color, p.type));
-    return map;
-  }, [points]);
+  const icons = useMemo(
+    () => new Map(points.map((p) => [p.id, vehicleDivIcon({ color: p.color, type: p.type })])),
+    [points]
+  );
 
   return (
-    <MapContainer
-      center={CANOAS_CENTER}
-      zoom={13}
-      scrollWheelZoom={false}
-      className="w-full h-80 rounded-xl z-0"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
+    <BaseMap scrollWheelZoom={false} className="w-full h-80 rounded-xl z-0">
       <FitBounds points={points} />
       {points.map((p) => (
         <Marker key={p.id} position={[p.lat, p.lng]} icon={icons.get(p.id)}>
@@ -85,6 +56,6 @@ export function FleetMap({ points }: { points: FleetMapPoint[] }) {
           </Popup>
         </Marker>
       ))}
-    </MapContainer>
+    </BaseMap>
   );
 }

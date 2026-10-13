@@ -20,8 +20,7 @@ async function seed() {
   ]
 
   // Real contact/location info supplied for 6 of the above. Coordinates were
-  // geocoded via Nominatim (same service backing /public/geocode), biased to
-  // Canoas; Mãos Dadas and Coopermag only resolved to neighborhood/landmark
+  // geocoded once via Nominatim, biased to Canoas; Mãos Dadas and Coopermag only resolved to neighborhood/landmark
   // precision (exact address not in OSM) — correctable later via each
   // cooperative's own self-edit screen (PUT /cooperatives/:id).
   const coopDetails: Record<

@@ -3,30 +3,35 @@ import { z } from "zod"
 import { VehicleController } from "./vehicle.controller"
 import {
   vehicleSchema,
-  createVehicleSchema,
-  updateVehicleSchema,
-  vehiclePositionSchema,
+  vehicleWithPositionSchema,
+  vehicleInputSchema,
+  positionSchema,
   createPositionSchema,
-  etaQuerySchema,
-  etaSchema,
   loanVehicleSchema,
   endLoanSchema,
   routeConflictSchema,
 } from "./vehicle.schema"
 import { errorResponseSchema, idParamSchema } from "../common.schema"
-import { requireStaff } from "../../middleware/auth.middleware"
+import { requireCooperativeAdmin } from "../../middleware/auth.middleware"
 
 const controller = new VehicleController()
+
+const loanResponses = {
+  200: vehicleSchema,
+  400: errorResponseSchema,
+  404: errorResponseSchema,
+  409: routeConflictSchema,
+}
 
 export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "List vehicles",
+        summary: "List the caller's vehicles (owned or borrowed), each with its latest GPS position",
         tags: ["Vehicles"],
-        response: { 200: z.array(vehicleSchema) },
+        response: { 200: z.array(vehicleWithPositionSchema) },
       },
     },
     controller.list.bind(controller)
@@ -35,9 +40,9 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/vehicles/:id",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Get vehicle by ID",
+        summary: "Get one of the caller's own vehicles",
         tags: ["Vehicles"],
         params: idParamSchema,
         response: { 200: vehicleSchema, 404: errorResponseSchema },
@@ -49,11 +54,11 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/vehicles",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
         summary: "Create vehicle",
         tags: ["Vehicles"],
-        body: createVehicleSchema,
+        body: vehicleInputSchema,
         response: { 201: vehicleSchema },
       },
     },
@@ -63,12 +68,12 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.put(
     "/vehicles/:id",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Update vehicle",
+        summary: "Update one of the caller's own vehicles",
         tags: ["Vehicles"],
         params: idParamSchema,
-        body: updateVehicleSchema,
+        body: vehicleInputSchema,
         response: { 200: vehicleSchema, 404: errorResponseSchema },
       },
     },
@@ -78,91 +83,42 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.delete(
     "/vehicles/:id",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Delete vehicle",
+        summary: "Delete one of the caller's own vehicles",
         tags: ["Vehicles"],
         params: idParamSchema,
-        response: { 204: z.any(), 404: errorResponseSchema },
+        response: { 204: z.null(), 404: errorResponseSchema },
       },
     },
     controller.remove.bind(controller)
   )
 
-  server.get(
-    "/vehicles/:id/positions",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Get vehicle positions history",
-        tags: ["Vehicles"],
-        params: idParamSchema,
-        querystring: z.object({ limit: z.string().optional() }),
-        response: { 200: z.array(vehiclePositionSchema) },
-      },
-    },
-    controller.getPositions.bind(controller)
-  )
-
-  server.get(
-    "/vehicles/:id/positions/latest",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Get latest vehicle position",
-        tags: ["Vehicles"],
-        params: idParamSchema,
-        response: { 200: vehiclePositionSchema, 404: errorResponseSchema },
-      },
-    },
-    controller.getLatestPosition.bind(controller)
-  )
-
   server.post(
     "/vehicles/:id/positions",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Register vehicle position",
+        summary: "Register a GPS position for a vehicle the caller drives (manual feed / simulation)",
         tags: ["Vehicles"],
         params: idParamSchema,
         body: createPositionSchema,
-        response: { 201: vehiclePositionSchema },
+        response: { 201: positionSchema, 404: errorResponseSchema },
       },
     },
     controller.createPosition.bind(controller)
   )
 
-  server.get(
-    "/vehicles/:id/eta",
-    {
-      preHandler: requireStaff,
-      schema: {
-        summary: "Check if this vehicle's route is near a given point, and its ETA",
-        tags: ["Vehicles"],
-        params: idParamSchema,
-        querystring: etaQuerySchema,
-        response: { 200: etaSchema, 404: errorResponseSchema },
-      },
-    },
-    controller.getEta.bind(controller)
-  )
-
   server.post(
     "/vehicles/:id/loan",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Lend a vehicle to another cooperative. Returns 409 with the conflicting routes if the vehicle is on an active route and confirmUnlink wasn't set.",
+        summary: "Lend a vehicle to another cooperative. 409 with the routes using it unless confirmUnlink is set.",
         tags: ["Vehicles"],
         params: idParamSchema,
         body: loanVehicleSchema,
-        response: {
-          200: vehicleSchema,
-          400: errorResponseSchema,
-          404: errorResponseSchema,
-          409: routeConflictSchema,
-        },
+        response: loanResponses,
       },
     },
     controller.loan.bind(controller)
@@ -171,18 +127,13 @@ export const vehicleRoutes: FastifyPluginAsyncZod = async (server) => {
   server.post(
     "/vehicles/:id/loan/return",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "End a vehicle's active loan. Returns 409 with the conflicting routes if the vehicle is on an active route and confirmUnlink wasn't set.",
+        summary: "End a vehicle's loan. 409 with the routes using it unless confirmUnlink is set.",
         tags: ["Vehicles"],
         params: idParamSchema,
         body: endLoanSchema,
-        response: {
-          200: vehicleSchema,
-          400: errorResponseSchema,
-          404: errorResponseSchema,
-          409: routeConflictSchema,
-        },
+        response: loanResponses,
       },
     },
     controller.endLoan.bind(controller)

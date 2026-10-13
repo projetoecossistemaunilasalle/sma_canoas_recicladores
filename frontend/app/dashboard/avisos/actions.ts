@@ -2,8 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { getToken } from "@/lib/session";
-import { createAnnouncement, updateAnnouncement, deleteAnnouncement, type AnnouncementInput } from "@/lib/data";
-import type { Announcement } from "@/lib/types";
+import { createAnnouncement, updateAnnouncement, deleteAnnouncement } from "@/lib/data";
+import type { Announcement, AnnouncementInput } from "@/lib/types";
 
 export async function createAnnouncementAction(
   data: AnnouncementInput

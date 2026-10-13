@@ -1,80 +1,74 @@
-import { eq, and, or, inArray, desc, sql } from "drizzle-orm"
+import { and, eq, or, desc, sql, getTableColumns } from "drizzle-orm"
 import { db } from "../../db"
-import { vehicles, vehiclePositions, collectionRoutes, type NewVehicle, type NewVehiclePosition } from "../../db/schema"
-import { scopeCondition } from "../../lib/db-scope"
-import { WEEKDAY_ORDER, WEEKDAY_LABELS } from "../../lib/weekdays"
+import { vehicles, vehiclePositions, collectionRoutes, type NewVehicle, type Vehicle } from "../../db/schema"
+import { pointFromLatLng } from "../../lib/geometry"
 
 const positionColumns = {
-  id: vehiclePositions.id,
-  vehicleId: vehiclePositions.vehicleId,
-  location: sql<string>`ST_AsText(${vehiclePositions.location})`.as("location"),
+  lat: sql<number>`ST_Y(${vehiclePositions.location})`,
+  lng: sql<number>`ST_X(${vehiclePositions.location})`,
   recordedAt: vehiclePositions.recordedAt,
-}
-
-export interface EtaStop {
-  streetId: number
-  name: string | null
-  lat: number
-  lng: number
 }
 
 export interface ConflictingRoute {
   id: string
-  label: string
+  daysOfWeek: string[] | null
+  shift: string | null
 }
 
 export interface LoanResult {
-  vehicle?: typeof vehicles.$inferSelect
+  vehicle?: Vehicle
   error?: "not_found" | "same_cooperative" | "already_loaned" | "not_loaned" | "route_conflict"
   routes?: ConflictingRoute[]
 }
 
-const SHIFT_LABELS: Record<string, string> = { manha: "Manhã", tarde: "Tarde", noite: "Noite" }
-
-function describeRoute(r: { daysOfWeek: string[] | null; shift: string | null; scheduledDate: string | null }): string {
-  if (r.daysOfWeek && r.daysOfWeek.length > 0) {
-    // Stored in whatever order the cooperative clicked them in — sort to the
-    // canonical week order so the confirmation dialog reads naturally.
-    const days = [...r.daysOfWeek]
-      .sort((a, b) => WEEKDAY_ORDER.indexOf(a) - WEEKDAY_ORDER.indexOf(b))
-      .map((d) => WEEKDAY_LABELS[d] ?? d)
-      .join(", ")
-    const shift = r.shift ? ` · ${SHIFT_LABELS[r.shift] ?? r.shift}` : ""
-    return `${days}${shift}`
-  }
-  if (r.scheduledDate) return `Rota agendada para ${r.scheduledDate}`
-  return "Rota sem agendamento definido"
+// A cooperative "sees" a vehicle it owns OR currently holds on loan — the
+// borrower drives it, lists it and assigns it to routes, even though
+// cooperativeId still points at the lender. Editing, deleting and lending it
+// stay owner-only (ownedBy).
+function visibleTo(cooperativeId: string) {
+  return or(eq(vehicles.cooperativeId, cooperativeId), eq(vehicles.loanedToCooperativeId, cooperativeId))
 }
 
-// get_eta_following_route() returns the path as GeoJSON text (coordinates
-// are [lng, lat], PostGIS's default order) — flip to {lat,lng} to match the
-// rest of the app's convention (see parseWktPoint in lib/geo.ts).
-function parsePathGeoJson(geojson: string | null): Array<{ lat: number; lng: number }> {
-  if (!geojson) return []
-  const parsed = JSON.parse(geojson) as { type: string; coordinates: [number, number][] }
-  return parsed.coordinates.map(([lng, lat]) => ({ lat, lng }))
+function ownedBy(id: string, cooperativeId: string) {
+  return and(eq(vehicles.id, id), eq(vehicles.cooperativeId, cooperativeId))
 }
 
 export class VehicleService {
-  // Visible to a cooperative if it owns the vehicle OR currently holds it on
-  // loan — a borrowed vehicle needs to show up in the borrower's fleet list
-  // and be assignable to their routes, even though cooperativeId still
-  // points at the lender.
-  async findAll(filterCooperativeId?: string) {
-    if (filterCooperativeId) {
-      return db
-        .select()
-        .from(vehicles)
-        .where(or(eq(vehicles.cooperativeId, filterCooperativeId), eq(vehicles.loanedToCooperativeId, filterCooperativeId)))
-    }
-    return db.select().from(vehicles)
+  async findAll(cooperativeId: string) {
+    const rows = await db
+      .select({
+        ...getTableColumns(vehicles),
+        // Table-qualified on purpose: in a single-table select Drizzle renders
+        // ${vehicles.id} as a bare "id", which here would mean vp.id.
+        lastPosition: sql<{ lat: number; lng: number; recordedAt: string } | null>`(
+          SELECT json_build_object('lat', ST_Y(vp.location), 'lng', ST_X(vp.location), 'recordedAt', vp.recorded_at)
+          FROM ${vehiclePositions} vp
+          WHERE vp.vehicle_id = ${vehicles}.id
+          ORDER BY vp.recorded_at DESC
+          LIMIT 1
+        )`,
+      })
+      .from(vehicles)
+      .where(visibleTo(cooperativeId))
+      .orderBy(vehicles.plate)
+    return rows.map((v) => ({
+      ...v,
+      lastPosition: v.lastPosition ? { ...v.lastPosition, recordedAt: new Date(v.lastPosition.recordedAt) } : null,
+    }))
   }
 
-  async findById(id: string, filterCooperativeId?: string) {
+  /** Owner-only — what edit/delete/lend go through. */
+  async findById(id: string, cooperativeId: string) {
+    const [v] = await db.select().from(vehicles).where(ownedBy(id, cooperativeId)).limit(1)
+    return v ?? null
+  }
+
+  /** Owner or borrower — what assigning to a route and posting GPS go through. */
+  async findVisible(id: string, cooperativeId: string) {
     const [v] = await db
       .select()
       .from(vehicles)
-      .where(scopeCondition(eq(vehicles.id, id), vehicles.cooperativeId, filterCooperativeId))
+      .where(and(eq(vehicles.id, id), visibleTo(cooperativeId)))
       .limit(1)
     return v ?? null
   }
@@ -89,91 +83,61 @@ export class VehicleService {
     return v
   }
 
-  async update(id: string, data: Partial<NewVehicle>, filterCooperativeId?: string) {
-    const payload = { ...data, updatedAt: new Date() }
+  async update(id: string, data: Partial<NewVehicle>, cooperativeId: string) {
     const [v] = await db
       .update(vehicles)
-      .set(payload)
-      .where(scopeCondition(eq(vehicles.id, id), vehicles.cooperativeId, filterCooperativeId))
+      .set({ ...data, updatedAt: new Date() })
+      .where(ownedBy(id, cooperativeId))
       .returning()
     return v ?? null
   }
 
-  async delete(id: string, filterCooperativeId?: string) {
-    const [v] = await db
-      .delete(vehicles)
-      .where(scopeCondition(eq(vehicles.id, id), vehicles.cooperativeId, filterCooperativeId))
-      .returning()
+  async delete(id: string, cooperativeId: string) {
+    const [v] = await db.delete(vehicles).where(ownedBy(id, cooperativeId)).returning()
     return v ?? null
   }
 
-  // Loans
-  // Any planned/active route still pointing at this vehicle — whichever
-  // cooperative created it — needs to be flagged before a loan starts or
-  // ends, since the truck won't physically be there to run it.
-  async findConflictingRoutes(vehicleId: string): Promise<ConflictingRoute[]> {
-    const rows = await db
-      .select({
-        id: collectionRoutes.id,
-        daysOfWeek: collectionRoutes.daysOfWeek,
-        shift: collectionRoutes.shift,
-        scheduledDate: collectionRoutes.scheduledDate,
-      })
-      .from(collectionRoutes)
-      .where(and(eq(collectionRoutes.vehicleId, vehicleId), inArray(collectionRoutes.status, ["planned", "active"])))
-    return rows.map((r) => ({ id: r.id, label: describeRoute(r) }))
-  }
-
-  async loanTo(id: string, targetCooperativeId: string, confirmUnlink: boolean, filterCooperativeId?: string): Promise<LoanResult> {
-    const vehicle = await this.findById(id, filterCooperativeId)
+  // Loans. Lending (targetCooperativeId set) and returning (null) share the
+  // same guard: any route — whichever cooperative made it — still pointing at
+  // the vehicle would silently lose its truck, so the caller has to confirm
+  // (confirmUnlink) and those routes' vehicleId is cleared in the same
+  // transaction as the loan change.
+  async setLoan(
+    id: string,
+    targetCooperativeId: string | null,
+    confirmUnlink: boolean,
+    cooperativeId: string
+  ): Promise<LoanResult> {
+    const vehicle = await this.findById(id, cooperativeId)
     if (!vehicle) return { error: "not_found" }
-    if (vehicle.cooperativeId === targetCooperativeId) return { error: "same_cooperative" }
-    if (vehicle.loanedToCooperativeId) return { error: "already_loaned" }
+    if (targetCooperativeId) {
+      if (vehicle.cooperativeId === targetCooperativeId) return { error: "same_cooperative" }
+      if (vehicle.loanedToCooperativeId) return { error: "already_loaned" }
+    } else if (!vehicle.loanedToCooperativeId) {
+      return { error: "not_loaned" }
+    }
 
-    const routes = await this.findConflictingRoutes(id)
+    const routes = await db
+      .select({ id: collectionRoutes.id, daysOfWeek: collectionRoutes.daysOfWeek, shift: collectionRoutes.shift })
+      .from(collectionRoutes)
+      .where(eq(collectionRoutes.vehicleId, id))
     if (routes.length > 0 && !confirmUnlink) return { error: "route_conflict", routes }
 
-    const v = await db.transaction(async (tx) => {
+    const updated = await db.transaction(async (tx) => {
       if (routes.length > 0) {
         await tx.update(collectionRoutes).set({ vehicleId: null }).where(eq(collectionRoutes.vehicleId, id))
       }
-      const [updated] = await tx
+      const [v] = await tx
         .update(vehicles)
         .set({ loanedToCooperativeId: targetCooperativeId, updatedAt: new Date() })
         .where(eq(vehicles.id, id))
         .returning()
-      return updated
+      return v
     })
-    return { vehicle: v }
-  }
-
-  async returnLoan(id: string, confirmUnlink: boolean, filterCooperativeId?: string): Promise<LoanResult> {
-    const vehicle = await this.findById(id, filterCooperativeId)
-    if (!vehicle) return { error: "not_found" }
-    if (!vehicle.loanedToCooperativeId) return { error: "not_loaned" }
-
-    const routes = await this.findConflictingRoutes(id)
-    if (routes.length > 0 && !confirmUnlink) return { error: "route_conflict", routes }
-
-    const v = await db.transaction(async (tx) => {
-      if (routes.length > 0) {
-        await tx.update(collectionRoutes).set({ vehicleId: null }).where(eq(collectionRoutes.vehicleId, id))
-      }
-      const [updated] = await tx
-        .update(vehicles)
-        .set({ loanedToCooperativeId: null, updatedAt: new Date() })
-        .where(eq(vehicles.id, id))
-        .returning()
-      return updated
-    })
-    return { vehicle: v }
+    return { vehicle: updated }
   }
 
   // Positions
-  async findPositions(vehicleId: string, limit = 50) {
-    return db.select(positionColumns).from(vehiclePositions).where(eq(vehiclePositions.vehicleId, vehicleId)).orderBy(desc(vehiclePositions.recordedAt)).limit(limit)
-  }
-
   async findLatestPosition(vehicleId: string) {
     const [pos] = await db
       .select(positionColumns)
@@ -184,39 +148,11 @@ export class VehicleService {
     return pos ?? null
   }
 
-  async createPosition(vehicleId: string, data: NewVehiclePosition) {
-    const [pos] = await db.insert(vehiclePositions).values({ ...data, vehicleId }).returning(positionColumns)
+  async createPosition(vehicleId: string, lat: number, lng: number, recordedAt?: Date) {
+    const [pos] = await db
+      .insert(vehiclePositions)
+      .values({ vehicleId, location: pointFromLatLng(lat, lng), ...(recordedAt ? { recordedAt } : {}) })
+      .returning(positionColumns)
     return pos
-  }
-
-  // Tracking: "is this vehicle's route near me, and when will it arrive?"
-  // Delegates to get_eta_following_route() (docker/postgres/initdb/005-maps.sql),
-  // which walks the vehicle's active route_streets sequence rather than
-  // re-running pgRouting on every request.
-  async getEta(vehicleId: string, lat: number, lng: number, citizenStreetId?: number) {
-    const result = await db.execute<{
-      status: string
-      tempo_segundos: number
-      tempo_texto: string
-      distancia_km: number
-      ruas_restantes: number
-      rua_atual: string | null
-      rua_cidadao: string | null
-      path_geojson: string | null
-      stops_json: string | null
-    }>(sql`SELECT * FROM get_eta_following_route(${vehicleId}, ${lat}, ${lng}, ${citizenStreetId ?? null})`)
-    const row = result.rows[0]
-    if (!row) return null
-    return {
-      status: row.status,
-      etaSeconds: Number(row.tempo_segundos),
-      etaText: row.tempo_texto,
-      distanceKm: Number(row.distancia_km),
-      streetsRemaining: row.ruas_restantes,
-      currentStreet: row.rua_atual,
-      citizenStreet: row.rua_cidadao,
-      path: parsePathGeoJson(row.path_geojson),
-      stops: row.stops_json ? (JSON.parse(row.stops_json) as EtaStop[]) : [],
-    }
   }
 }

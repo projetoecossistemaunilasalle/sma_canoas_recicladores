@@ -4,10 +4,13 @@ import { PublicTrackingController } from "./public-tracking.controller"
 import {
   geocodeQuerySchema,
   geocodeResultSchema,
+  addressStreetQuerySchema,
+  addressStreetResultSchema,
   collectionCheckQuerySchema,
   collectionCheckResultSchema,
   publicCooperativeSchema,
 } from "./public-tracking.schema"
+import { errorResponseSchema } from "../common.schema"
 
 const controller = new PublicTrackingController()
 
@@ -19,13 +22,26 @@ export const publicTrackingRoutes: FastifyPluginAsyncZod = async (server) => {
     "/public/geocode",
     {
       schema: {
-        summary: "Geocode a free-text address, biased to Canoas",
+        summary: "Search Canoas streets by name, optionally with the bairro (street-level only, no house numbers)",
         tags: ["Public"],
         querystring: geocodeQuerySchema,
         response: { 200: z.array(geocodeResultSchema) },
       },
     },
     controller.geocode.bind(controller)
+  )
+
+  server.get(
+    "/public/address-street",
+    {
+      schema: {
+        summary: "Resolve which street segment a house pin sits on, and which side of it",
+        tags: ["Public"],
+        querystring: addressStreetQuerySchema,
+        response: { 200: addressStreetResultSchema, 404: errorResponseSchema },
+      },
+    },
+    controller.addressStreet.bind(controller)
   )
 
   server.get(

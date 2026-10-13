@@ -1,31 +1,18 @@
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { StreetController } from "./street.controller"
-import { streetSchema, listStreetsQuerySchema, nearestStreetQuerySchema } from "./street.schema"
+import { streetSchema, nearestStreetQuerySchema } from "./street.schema"
 import { errorResponseSchema } from "../common.schema"
-import { requireAnyAuthed } from "../../middleware/auth.middleware"
+import { requireAuth, requireCooperativeAdmin } from "../../middleware/auth.middleware"
 
 const controller = new StreetController()
 
 export const streetRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
-    "/streets",
-    {
-      preHandler: requireAnyAuthed,
-      schema: {
-        summary: "Search collectible streets by name",
-        tags: ["Streets"],
-        querystring: listStreetsQuerySchema,
-        response: { 200: z.array(streetSchema) },
-      },
-    },
-    controller.list.bind(controller)
-  )
-
-  server.get(
     "/streets/nearest",
     {
-      preHandler: requireAnyAuthed,
+      // The route builder's "click a street" — staff only.
+      preHandler: requireCooperativeAdmin,
       schema: {
         summary: "Find the nearest collectible street to a point",
         tags: ["Streets"],
@@ -39,7 +26,8 @@ export const streetRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/streets/:id",
     {
-      preHandler: requireAnyAuthed,
+      // Also the citizen profile's own street (public OSM data either way).
+      preHandler: requireAuth,
       schema: {
         summary: "Get street by ID",
         tags: ["Streets"],

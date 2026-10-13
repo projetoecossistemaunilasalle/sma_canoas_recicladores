@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import { getRoutes, getVehicles } from "@/lib/data";
-import { routeLiveStatusLabel, dayOfWeekLabel, shiftLabel } from "@/lib/format";
+import { routeLiveStatusLabel, routeScheduleLabel } from "@/lib/format";
 import { deleteRouteAction } from "./actions";
 import { PageHeader, EmptyListCard } from "../page-header";
 import { RowActions } from "../row-actions";
@@ -47,12 +47,7 @@ export default async function RoutesListPage() {
                     {vehicle?.plate ?? "Veículo removido"}
                     {vehicle?.model ? ` · ${vehicle.model}` : ""}
                   </p>
-                  <p className="text-body-md text-on-surface-variant">
-                    {(route.daysOfWeek ?? []).map(dayOfWeekLabel).join(", ") || "Sem dias"}
-                    {" · "}
-                    {route.shift ? shiftLabel(route.shift) : "Sem turno"}
-                    {route.startTime ? ` · ${route.startTime.slice(0, 5)}` : ""}
-                  </p>
+                  <p className="text-body-md text-on-surface-variant">{routeScheduleLabel(route)}</p>
                   <p className="text-body-md text-on-surface-variant">
                     {route.totalDistanceKm != null
                       ? `${route.totalDistanceKm.toFixed(1)} km`

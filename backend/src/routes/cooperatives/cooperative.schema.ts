@@ -3,20 +3,18 @@ import { z } from "zod"
 export const cooperativeSchema = z.object({
   id: z.uuid(),
   name: z.string().min(1),
-  cnpj: z.string().nullable().optional(),
-  phone: z.string().nullable().optional(),
-  address: z.string().nullable().optional(),
-  instagram: z.string().nullable().optional(),
-  website: z.string().nullable().optional(),
-  lat: z.number().nullable().optional(),
-  lng: z.number().nullable().optional(),
-  active: z.boolean().default(true),
-  createdAt: z.date().optional(),
-  updatedAt: z.date().optional(),
+  cnpj: z.string().nullable(),
+  phone: z.string().nullable(),
+  address: z.string().nullable(),
+  instagram: z.string().nullable(),
+  website: z.string().nullable(),
+  lat: z.number().nullable(),
+  lng: z.number().nullable(),
+  active: z.boolean(),
 })
 
-export const createCooperativeSchema = z.object({
-  name: z.string().min(1),
+export const updateCooperativeSchema = z.object({
+  name: z.string().min(1).optional(),
   cnpj: z.string().optional(),
   phone: z.string().optional(),
   address: z.string().optional(),
@@ -25,5 +23,3 @@ export const createCooperativeSchema = z.object({
   lat: z.number().nullable().optional(),
   lng: z.number().nullable().optional(),
 })
-
-export const updateCooperativeSchema = createCooperativeSchema.partial()

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
+import { requireCooperativeAdmin } from "@/lib/auth";
 import { getVehicles, getCooperatives } from "@/lib/data";
 import { deleteVehicleAction } from "./actions";
 import { VehicleLoanControl } from "./vehicle-loan-control";
@@ -13,12 +13,9 @@ export default async function VehiclesListPage({
   searchParams: Promise<{ error?: string }>;
 }) {
   const { error } = await searchParams;
-  const { token, user } = await requireUser();
+  const { token, cooperativeId } = await requireCooperativeAdmin();
 
-  const [vehicles, cooperatives] = await Promise.all([
-    getVehicles(token),
-    user.role === "admin" || user.role === "cooperative_admin" ? getCooperatives(token) : Promise.resolve([]),
-  ]);
+  const [vehicles, cooperatives] = await Promise.all([getVehicles(token), getCooperatives(token)]);
   const cooperativeById = new Map(cooperatives.map((c) => [c.id, c]));
 
   return (
@@ -54,9 +51,8 @@ export default async function VehiclesListPage({
             const borrowerCoop = vehicle.loanedToCooperativeId
               ? cooperativeById.get(vehicle.loanedToCooperativeId)
               : undefined;
-            const isOwner = user.role === "admin" || vehicle.cooperativeId === user.cooperativeId;
-            const isBorrowedByViewer =
-              user.role === "cooperative_admin" && !isOwner && vehicle.loanedToCooperativeId === user.cooperativeId;
+            const isOwner = vehicle.cooperativeId === cooperativeId;
+            const isBorrowedByViewer = !isOwner && vehicle.loanedToCooperativeId === cooperativeId;
             const lendTargets = cooperatives.filter((c) => c.active && c.id !== vehicle.cooperativeId);
 
             return (

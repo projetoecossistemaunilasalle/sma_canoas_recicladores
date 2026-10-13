@@ -4,6 +4,7 @@ import { useRef, useState, useTransition } from "react";
 import { createAnnouncementAction, updateAnnouncementAction, deleteAnnouncementAction } from "./actions";
 import { toBase64Image, ImageValidationError } from "@/lib/image-upload";
 import { relativeTime } from "@/lib/format";
+import { announcementImageUrl } from "@/lib/public-api";
 import type { Announcement, AnnouncementType } from "@/lib/types";
 
 const TYPES: { value: AnnouncementType; label: string }[] = [
@@ -66,6 +67,15 @@ function ImageField({
   );
 }
 
+// What to send for one image slot: a newly picked image (a data URL) replaces
+// it, a removed one clears it, and the image the post already had (shown by
+// URL) is left out so the backend keeps it.
+function imageChange(value: string | null, existingId: string | null | undefined): string | null | undefined {
+  if (value?.startsWith("data:")) return value;
+  if (value === null && existingId) return null;
+  return undefined;
+}
+
 export function AvisosForm({ recentPosts }: { recentPosts: Announcement[] }) {
   const [type, setType] = useState<AnnouncementType>("aviso");
   const [title, setTitle] = useState("");
@@ -95,22 +105,23 @@ export function AvisosForm({ recentPosts }: { recentPosts: Announcement[] }) {
     setType(post.type);
     setTitle(post.title ?? "");
     setBody(post.body);
-    setMainImage(post.mainImage);
-    setSubImage1(post.subImage1);
-    setSubImage2(post.subImage2);
+    setMainImage(post.mainImageId ? announcementImageUrl(post.mainImageId) : null);
+    setSubImage1(post.subImage1Id ? announcementImageUrl(post.subImage1Id) : null);
+    setSubImage2(post.subImage2Id ? announcementImageUrl(post.subImage2Id) : null);
     setEditingId(post.id);
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
+    const editing = posts.find((p) => p.id === editingId);
     const data = {
       type,
       title: title.trim() || undefined,
       body,
-      mainImage,
-      subImage1,
-      subImage2,
+      mainImage: imageChange(mainImage, editing?.mainImageId),
+      subImage1: imageChange(subImage1, editing?.subImage1Id),
+      subImage2: imageChange(subImage2, editing?.subImage2Id),
     };
     startTransition(async () => {
       const { result, error } = editingId

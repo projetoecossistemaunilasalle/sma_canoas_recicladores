@@ -1,14 +1,8 @@
 "use server";
 
 import { getToken } from "@/lib/session";
-import {
-  updateProfile,
-  savePushSubscription,
-  deletePushSubscription,
-  type UpdateProfileInput,
-  type PushSubscriptionInput,
-} from "@/lib/data";
-import type { CurrentUser } from "@/lib/types";
+import { updateProfile, savePushSubscription, deletePushSubscriptions } from "@/lib/data";
+import type { CurrentUser, PushSubscriptionInput, UpdateProfileInput } from "@/lib/types";
 
 export async function updateProfileAction(
   data: UpdateProfileInput
@@ -24,9 +18,7 @@ export async function updateProfileAction(
   }
 }
 
-export async function savePushSubscriptionAction(
-  data: PushSubscriptionInput
-): Promise<{ ok: boolean }> {
+export async function savePushSubscriptionAction(data: PushSubscriptionInput): Promise<{ ok: boolean }> {
   const token = await getToken();
   if (!token) return { ok: false };
 
@@ -38,12 +30,12 @@ export async function savePushSubscriptionAction(
   }
 }
 
-export async function deletePushSubscriptionAction(endpoint: string): Promise<{ ok: boolean }> {
+export async function deletePushSubscriptionsAction(): Promise<{ ok: boolean }> {
   const token = await getToken();
   if (!token) return { ok: false };
 
   try {
-    await deletePushSubscription(token, endpoint);
+    await deletePushSubscriptions(token);
     return { ok: true };
   } catch {
     return { ok: false };

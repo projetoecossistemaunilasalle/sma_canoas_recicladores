@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { relativeTime } from "@/lib/format";
+import { announcementImageUrl } from "@/lib/public-api";
 import type { Announcement, AnnouncementType } from "@/lib/types";
 
 const TABS: { value: AnnouncementType; label: string }[] = [
@@ -36,9 +37,9 @@ export function AvisosList({ announcements }: { announcements: Announcement[] })
             key={a.id}
             className="bg-surface-container-lowest rounded-2xl overflow-hidden shadow-sm border border-outline-variant/30 flex flex-col"
           >
-            {a.mainImage ? (
+            {a.mainImageId ? (
               // eslint-disable-next-line @next/next/no-img-element
-              <img src={a.mainImage} alt="" className="w-full max-h-64 object-cover" />
+              <img src={announcementImageUrl(a.mainImageId)} alt="" className="w-full max-h-64 object-cover" />
             ) : null}
             <div className="p-4 flex flex-col gap-2">
               <div className="flex items-center justify-between gap-2">
@@ -47,15 +48,15 @@ export function AvisosList({ announcements }: { announcements: Announcement[] })
               </div>
               {a.title ? <p className="text-title-lg text-on-surface">{a.title}</p> : null}
               <p className="text-body-md text-on-surface whitespace-pre-wrap break-words">{a.body}</p>
-              {a.subImage1 || a.subImage2 ? (
+              {a.subImage1Id || a.subImage2Id ? (
                 <div className="grid grid-cols-2 gap-2 mt-1">
-                  {a.subImage1 ? (
+                  {a.subImage1Id ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={a.subImage1} alt="" className="w-full h-32 object-cover rounded-xl" />
+                    <img src={announcementImageUrl(a.subImage1Id)} alt="" className="w-full h-32 object-cover rounded-xl" />
                   ) : null}
-                  {a.subImage2 ? (
+                  {a.subImage2Id ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={a.subImage2} alt="" className="w-full h-32 object-cover rounded-xl" />
+                    <img src={announcementImageUrl(a.subImage2Id)} alt="" className="w-full h-32 object-cover rounded-xl" />
                   ) : null}
                 </div>
               ) : null}

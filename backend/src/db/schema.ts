@@ -1,7 +1,11 @@
 import { pgTable, uuid, text, boolean, timestamp, integer, doublePrecision, serial, bigint, date, time, customType } from "drizzle-orm/pg-core"
-import { relations, sql } from "drizzle-orm"
+import type { Role } from "../lib/jwt"
 
-// WKT text in/out (e.g. "POINT(lng lat)"); reads must go through ST_AsText, see vehicle.service.ts
+// PostGIS columns. Drizzle's built-in geometry() only does Points and ignores
+// the SRID, so these are custom types. The app never reads or writes them
+// as values: writes pass a SQL expression (ST_SetSRID(ST_MakePoint(...))),
+// reads go through the helpers in lib/geometry.ts — the API speaks
+// {lat, lng} and [lat, lng][], never WKT.
 const geometryPoint = customType<{ data: string }>({
   dataType() {
     return "geometry(Point,4326)"
@@ -11,6 +15,18 @@ const geometryPoint = customType<{ data: string }>({
 const geometryLineString = customType<{ data: string }>({
   dataType() {
     return "geometry(LineString,4326)"
+  },
+})
+
+const geometryMultiPolygon = customType<{ data: string }>({
+  dataType() {
+    return "geometry(MultiPolygon,4326)"
+  },
+})
+
+const bytea = customType<{ data: Buffer }>({
+  dataType() {
+    return "bytea"
   },
 })
 
@@ -25,8 +41,7 @@ export const cooperatives = pgTable("cooperatives", {
   address: text("address"),
   instagram: text("instagram"),
   website: text("website"),
-  // Pin location for the citizen-facing maps, set via the same geocoded
-  // address-picker flow as users.addressLat/Lng (see /public/geocode).
+  // Pin for the citizen-facing maps (the address itself is free text).
   lat: doublePrecision("lat"),
   lng: doublePrecision("lng"),
   active: boolean("active").notNull().default(true),
@@ -40,24 +55,35 @@ export const cooperatives = pgTable("cooperatives", {
 export const users = pgTable("users", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: text("name").notNull(),
+  // Always lowercase (the API normalizes; the DB has a CHECK).
   email: text("email").unique().notNull(),
   password: text("password").notNull(),
-  role: text("role").notNull().default("user"),
+  // "user" (citizen) or "cooperative_admin" — no global admin; a
+  // cooperative_admin always has a cooperativeId and a citizen never does (CHECKs).
+  role: text("role").$type<Role>().notNull().default("user"),
   active: boolean("active").notNull().default(true),
   cooperativeId: uuid("cooperative_id").references(() => cooperatives.id),
   address: text("address"),
-  // Geocoded coordinates of `address`, kept in sync with it (see /public/geocode) —
-  // lets the citizen-facing "Minha Coleta" screen reuse the public collection-check
-  // flow without re-searching the address every visit.
+  addressNumber: text("address_number"),
+  // The citizen's house pin, plus the segment it sits on and which side
+  // ('left' | 'right', relative to source→target) — confirmed by the citizen
+  // and compared directly against routeStreets.streetId/side. The four go
+  // together or not at all. Deliberately no FK to streets: import-streets
+  // TRUNCATEs streets with CASCADE, which would wipe this whole table.
   addressLat: doublePrecision("address_lat"),
   addressLng: doublePrecision("address_lng"),
-  notifyProximity: boolean("notify_proximity").notNull().default(false),
+  addressStreetId: integer("address_street_id"),
+  addressSide: text("address_side"),
+  // Last day the "truck is arriving" push went out — one per collection,
+  // and survives a backend restart (see proximity-notifier.ts).
+  proximityNotifiedOn: date("proximity_notified_on"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
 // ============================================
-// PUSH SUBSCRIPTIONS (Web Push, for proximity notifications)
+// PUSH SUBSCRIPTIONS (Web Push) — having one is what turns proximity
+// notifications on for a citizen.
 // ============================================
 export const pushSubscriptions = pgTable("push_subscriptions", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -77,7 +103,7 @@ export const vehicles = pgTable("vehicles", {
   model: text("model"),
   color: text("color"),
   type: text("type").notNull().default("caminhao"), // 'caminhao' | 'bicicleta'
-  cooperativeId: uuid("cooperative_id").references(() => cooperatives.id),
+  cooperativeId: uuid("cooperative_id").notNull().references(() => cooperatives.id),
   loanedToCooperativeId: uuid("loaned_to_cooperative_id").references(() => cooperatives.id),
   active: boolean("active").notNull().default(true),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -110,6 +136,21 @@ export const streets = pgTable("streets", {
   requiresCollection: boolean("requires_collection").default(false),
   oneway: boolean("oneway").default(false),
   highwayType: text("highway_type"),
+  // Bairro(s) the segment's midpoint is in (both, for a border street) —
+  // derived, see street-neighborhoods.ts.
+  neighborhoodNames: text("neighborhood_names").array(),
+})
+
+// ============================================
+// NEIGHBORHOODS (bairros)
+// ============================================
+// Populated by `pnpm neighborhoods:import` from OSM boundaries, not through
+// the app (see 008-neighborhoods.sql).
+export const neighborhoods = pgTable("neighborhoods", {
+  id: serial("id").primaryKey(),
+  osmId: bigint("osm_id", { mode: "number" }),
+  name: text("name").notNull(),
+  geom: geometryMultiPolygon("geom").notNull(),
 })
 
 // ============================================
@@ -118,17 +159,13 @@ export const streets = pgTable("streets", {
 export const collectionRoutes = pgTable("collection_routes", {
   id: uuid("id").primaryKey().defaultRandom(),
   vehicleId: uuid("vehicle_id").references(() => vehicles.id),
-  cooperativeId: uuid("cooperative_id").references(() => cooperatives.id),
-  status: text("status").default("planned"),
+  cooperativeId: uuid("cooperative_id").notNull().references(() => cooperatives.id),
   totalDistanceKm: doublePrecision("total_distance_km"),
   totalDurationSeconds: doublePrecision("total_duration_seconds"),
-  scheduledDate: date("scheduled_date"),
   // Recurring weekly schedule: e.g. daysOfWeek = ["seg","qua"], shift = "manha", startTime = "08:00"
   daysOfWeek: text("days_of_week").array(),
   shift: text("shift"), // 'manha' | 'tarde' | 'noite'
   startTime: time("start_time"),
-  startedAt: timestamp("started_at", { withTimezone: true }),
-  completedAt: timestamp("completed_at", { withTimezone: true }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
@@ -141,12 +178,17 @@ export const routeStreets = pgTable("route_streets", {
   streetId: integer("street_id").notNull().references(() => streets.id),
   stopOrder: integer("stop_order").notNull(),
   direction: text("direction").default("forward"), // 'forward' or 'reverse'
-  distanceFromPreviousKm: doublePrecision("distance_from_previous_km"),
-  durationFromPreviousSeconds: doublePrecision("duration_from_previous_seconds"),
   // true for the streets the cooperative actually picked as stops; false for
   // the connector segments pgr_dijkstra filled in between them. Lets the
   // route-edit UI re-show only what the user originally drew.
   isStop: boolean("is_stop").notNull().default(false),
+  // Only meaningful on stops: which side of the segment is collected
+  // ('both' | 'left' | 'right', relative to source→target — the direction
+  // computePath always drives a stop in) and which stretch of it
+  // (0..1 along the geometry, same space as ST_LineLocatePoint).
+  side: text("side").notNull().default("both"),
+  startFraction: doublePrecision("start_fraction").notNull().default(0),
+  endFraction: doublePrecision("end_fraction").notNull().default(1),
 })
 
 // ============================================
@@ -158,101 +200,25 @@ export const announcements = pgTable("announcements", {
   type: text("type").notNull().default("aviso"), // 'aviso' | 'noticia'
   title: text("title"),
   body: text("body").notNull(),
-  // Base64 data URLs (e.g. "data:image/png;base64,...."), size-capped at the
-  // API layer — see backend/src/lib/base64-image.ts.
-  mainImage: text("main_image"),
-  subImage1: text("sub_image_1"),
-  subImage2: text("sub_image_2"),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 })
 
-// ============================================
-// RELATIONS
-// ============================================
-export const cooperativesRelations = relations(cooperatives, ({ many }) => ({
-  users: many(users),
-  vehicles: many(vehicles),
-  routes: many(collectionRoutes),
-  announcements: many(announcements),
-}))
-
-export const announcementsRelations = relations(announcements, ({ one }) => ({
-  cooperative: one(cooperatives, {
-    fields: [announcements.cooperativeId],
-    references: [cooperatives.id],
-  }),
-}))
-
-export const usersRelations = relations(users, ({ one, many }) => ({
-  cooperative: one(cooperatives, {
-    fields: [users.cooperativeId],
-    references: [cooperatives.id],
-  }),
-  pushSubscriptions: many(pushSubscriptions),
-}))
-
-export const pushSubscriptionsRelations = relations(pushSubscriptions, ({ one }) => ({
-  user: one(users, {
-    fields: [pushSubscriptions.userId],
-    references: [users.id],
-  }),
-}))
-
-export const vehiclesRelations = relations(vehicles, ({ one, many }) => ({
-  cooperative: one(cooperatives, {
-    fields: [vehicles.cooperativeId],
-    references: [cooperatives.id],
-  }),
-  positions: many(vehiclePositions),
-  routes: many(collectionRoutes),
-}))
-
-export const vehiclePositionsRelations = relations(vehiclePositions, ({ one }) => ({
-  vehicle: one(vehicles, {
-    fields: [vehiclePositions.vehicleId],
-    references: [vehicles.id],
-  }),
-}))
-
-export const collectionRoutesRelations = relations(collectionRoutes, ({ one, many }) => ({
-  vehicle: one(vehicles, {
-    fields: [collectionRoutes.vehicleId],
-    references: [vehicles.id],
-  }),
-  cooperative: one(cooperatives, {
-    fields: [collectionRoutes.cooperativeId],
-    references: [cooperatives.id],
-  }),
-  routeStreets: many(routeStreets),
-}))
-
-export const routeStreetsRelations = relations(routeStreets, ({ one }) => ({
-  route: one(collectionRoutes, {
-    fields: [routeStreets.routeId],
-    references: [collectionRoutes.id],
-  }),
-  street: one(streets, {
-    fields: [routeStreets.streetId],
-    references: [streets.id],
-  }),
-}))
+// Up to 3 images per announcement, served by URL (GET /announcement-images/:id).
+// Replacing one inserts a new row, so an image's URL never changes content
+// and can be cached forever.
+export const announcementImages = pgTable("announcement_images", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  announcementId: uuid("announcement_id").notNull().references(() => announcements.id, { onDelete: "cascade" }),
+  slot: text("slot").notNull(), // 'main' | 'sub1' | 'sub2'
+  mime: text("mime").notNull(),
+  data: bytea("data").notNull(),
+})
 
 // Types
-export type Cooperative = typeof cooperatives.$inferSelect
-export type NewCooperative = typeof cooperatives.$inferInsert
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
-export type PushSubscription = typeof pushSubscriptions.$inferSelect
 export type NewPushSubscription = typeof pushSubscriptions.$inferInsert
 export type Vehicle = typeof vehicles.$inferSelect
 export type NewVehicle = typeof vehicles.$inferInsert
-export type VehiclePosition = typeof vehiclePositions.$inferSelect
-export type NewVehiclePosition = typeof vehiclePositions.$inferInsert
-export type Street = typeof streets.$inferSelect
-export type NewStreet = typeof streets.$inferInsert
 export type CollectionRoute = typeof collectionRoutes.$inferSelect
-export type NewCollectionRoute = typeof collectionRoutes.$inferInsert
-export type RouteStreet = typeof routeStreets.$inferSelect
-export type NewRouteStreet = typeof routeStreets.$inferInsert
-export type Announcement = typeof announcements.$inferSelect
-export type NewAnnouncement = typeof announcements.$inferInsert
+export type NewCooperative = typeof cooperatives.$inferInsert

@@ -35,6 +35,18 @@ export async function requireUser(): Promise<{ token: string; user: CurrentUser 
   return { token, user };
 }
 
+/**
+ * requireUser() for the dashboard pages: a cooperative_admin, plus the one
+ * cooperative it manages (there is no global admin). The dashboard layout
+ * already shows everyone else an "access restricted" page; this also gives
+ * the page a non-null cooperativeId.
+ */
+export async function requireCooperativeAdmin(): Promise<{ token: string; user: CurrentUser; cooperativeId: string }> {
+  const { token, user } = await requireUser();
+  if (user.role !== "cooperative_admin" || !user.cooperativeId) redirect("/citizen");
+  return { token, user, cooperativeId: user.cooperativeId };
+}
+
 /** The inverse guard used by the public entry pages (/, /login, /register): send an already-signed-in visitor straight to their area instead of showing the page. */
 export async function redirectIfAuthenticated(): Promise<void> {
   const token = await getToken();

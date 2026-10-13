@@ -8,7 +8,7 @@ import {
   listAnnouncementsQuerySchema,
 } from "./announcement.schema"
 import { errorResponseSchema, idParamSchema } from "../common.schema"
-import { requireAnyAuthed, requireCooperativeAdmin, requireStaff } from "../../middleware/auth.middleware"
+import { requireAuth, requireCooperativeAdmin } from "../../middleware/auth.middleware"
 
 const controller = new AnnouncementController()
 
@@ -16,7 +16,7 @@ export const announcementRoutes: FastifyPluginAsyncZod = async (server) => {
   server.get(
     "/announcements",
     {
-      preHandler: requireAnyAuthed,
+      preHandler: requireAuth,
       schema: {
         summary: "List announcements (avisos/notícias), newest first",
         tags: ["Announcements"],
@@ -44,11 +44,9 @@ export const announcementRoutes: FastifyPluginAsyncZod = async (server) => {
   server.put(
     "/announcements/:id",
     {
-      // A cooperative_admin can only edit its own cooperative's posts (see
-      // AnnouncementController.update's ownership check); "admin" can edit any.
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Update an announcement",
+        summary: "Update one of the caller's cooperative's announcements",
         tags: ["Announcements"],
         params: idParamSchema,
         body: updateAnnouncementSchema,
@@ -61,14 +59,26 @@ export const announcementRoutes: FastifyPluginAsyncZod = async (server) => {
   server.delete(
     "/announcements/:id",
     {
-      preHandler: requireStaff,
+      preHandler: requireCooperativeAdmin,
       schema: {
-        summary: "Delete an announcement",
+        summary: "Delete one of the caller's cooperative's announcements",
         tags: ["Announcements"],
         params: idParamSchema,
-        response: { 204: z.any(), 403: errorResponseSchema, 404: errorResponseSchema },
+        response: { 204: z.null(), 403: errorResponseSchema, 404: errorResponseSchema },
       },
     },
     controller.remove.bind(controller)
+  )
+
+  server.get(
+    "/announcement-images/:id",
+    {
+      schema: {
+        summary: "An announcement image (public, cacheable forever)",
+        tags: ["Announcements"],
+        params: idParamSchema,
+      },
+    },
+    controller.image.bind(controller)
   )
 }

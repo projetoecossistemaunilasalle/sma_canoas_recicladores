@@ -6,5 +6,5 @@ RUN apt-get update \
     && rm -rf /var/lib/apt/lists/*
 
 # docker-compose bind-mounts this locally; baked in here so the same scripts
-# also run on platforms (e.g. Render) that only build from this Dockerfile.
+# also run when the image is built and deployed on its own.
 COPY initdb/ /docker-entrypoint-initdb.d/

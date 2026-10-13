@@ -4,69 +4,81 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project overview
 
-Route/fleet management system for waste-picker cooperatives ("recicladores") in Canoas, RS, Brazil. It tracks cooperatives, vehicles, vehicle GPS positions, and collection routes built from a street network (via pgRouting), so cooperatives can plan and follow recycling collection routes.
+Route/fleet management system for waste-picker cooperatives ("recicladores") in Canoas, RS, Brazil. Cooperatives manage their vehicles and plan weekly collection routes on the street network (pgRouting); citizens find out when the truck passes their house (public map, citizen area, push notifications); trucks report GPS through the Multiportal integration. Not in production — there's no live database to migrate.
 
 Monorepo with three independent parts, each with its own package manager and lockfile:
 - `backend/` — Fastify + TypeScript REST API (pnpm)
-- `frontend/` — Next.js 16 App Router UI (npm) — currently still the default `create-next-app` scaffold, no app-specific pages/components have been built yet
-- `docker/postgres/` — custom Postgres image (PostGIS + pgRouting) plus numbered init SQL scripts
+- `frontend/` — Next.js 16 App Router UI (npm): public home, citizen area (`/citizen`), cooperative dashboard (`/dashboard`)
+- `docker/postgres/` — custom Postgres image (PostGIS + pgRouting) plus the numbered init SQL scripts, which are the schema
 
 ## Commands
 
 ### Backend (run from `backend/`)
 ```
 pnpm install
-pnpm dev              # tsx watch src/index.ts — dev server with reload
-pnpm start            # tsx src/index.ts — runs TS directly, no compiled dist/ step despite tsconfig outDir
-pnpm db:generate      # drizzle-kit generate
-pnpm db:migrate       # drizzle-kit migrate
-pnpm db:seed          # tsx src/db/seed.ts — seeds cooperatives, admin users, vehicles, positions
-pnpm db:studio        # drizzle-kit studio
+pnpm dev                    # tsx watch src/index.ts — dev server with reload
+pnpm start                  # tsx src/index.ts — runs TS directly, no compiled dist/ step
+pnpm db:seed                # cooperatives, admin users, vehicles, positions
+pnpm streets:import         # data/canoas.osm → streets (+ pgRouting topology) — wipes routes
+pnpm neighborhoods:import   # data/canoas-bairros.json → neighborhoods
+pnpm openapi                # writes openapi.json (no server/DB needed)
+pnpm password:hash '<pw>'   # argon2id hash for a users row created by hand
+pnpm db:studio              # drizzle-kit studio
 ```
-There is no backend test suite (`pnpm test` is a placeholder) and no lint script.
-
-`drizzle.config.ts` (schema `./src/db/schema.ts`, output `./drizzle`, reads `DATABASE_URL`) drives `db:generate`/`db:migrate`/`db:studio`. Note the existing dev DB's tables were created by the hand-written SQL in `docker/postgres/initdb/`, not by a Drizzle migration, so running `db:migrate` against it will try to (re)create tables that already exist — reconcile that (e.g. baseline/introspect) before relying on Drizzle migrations against that DB.
+There is no backend test suite (`pnpm test` is a placeholder) and no lint script. Typecheck with `pnpm exec tsc --noEmit`.
 
 ### Frontend (run from `frontend/`)
 ```
 npm install
 npm run dev           # next dev
 npm run build         # next build
-npm run start         # next start
 npm run lint          # eslint
+npm run api:types     # lib/api-types.ts from ../backend/openapi.json
 ```
 No frontend test suite is configured.
 
-### Database / Docker (run from repo root)
+### Database (run from repo root)
 ```
-docker compose up
+docker compose up -d db
 ```
-This currently only starts the `db` service (Postgres 16 + PostGIS + pgRouting, built from `docker/postgres/Dockerfile`, exposed on `localhost:5432`, credentials `postgres`/`postgres`, database `recicladores`). The `backend`/`frontend` services in `docker-compose.yml` are commented out, so day-to-day development runs the backend and frontend locally (`pnpm dev` / `npm run dev`) against this containerized DB — set `DATABASE_URL` accordingly (see `.env.example`).
+Postgres 16 + PostGIS + pgRouting on `localhost:5432` (`postgres`/`postgres`, database `recicladores`). Only the DB runs in Docker; backend and frontend run locally. Fresh setup: start the DB, then in `backend/` run `db:seed`, `streets:import`, `neighborhoods:import`.
 
-First-run DB initialization executes `docker/postgres/initdb/*.sql` in filename order (extensions, cooperatives, vehicles, user, maps/streets tables) — these only run once, on empty volume creation.
+## Schema
+
+`docker/postgres/initdb/*.sql` **is** the schema — run once, in filename order, when the DB volume is created (`001` extensions, `002` cooperatives, `003` vehicles/positions, `004` users/push subscriptions, `005` streets/routes + the ETA function, `006` announcements/images, `007` `street_side()`, `008` neighborhoods). There are no migrations: since nothing is in production, change the `CREATE TABLE`s directly (no `ADD COLUMN IF NOT EXISTS` patches). `backend/src/db/schema.ts` mirrors it by hand for typed Drizzle queries and must be kept in sync. An existing local DB volume doesn't re-run initdb — apply the change by hand or recreate the volume.
 
 ## Architecture
 
-### Backend: per-resource module pattern
-Each domain resource lives in `backend/src/routes/<resource>/` as four files, and new resources should follow the same split:
-- `<resource>.routes.ts` — Fastify plugin registering HTTP routes; declares `preHandler` auth chains and Zod request/response schemas (via `fastify-type-provider-zod`) inline
-- `<resource>.controller.ts` — thin HTTP glue: pulls params/body off the request, calls the service, shapes the reply/status code
-- `<resource>.service.ts` — all Drizzle ORM queries against `db` (from `src/db/index.ts`)
-- `<resource>.schema.ts` — Zod schemas used both for request validation and Swagger docs generation
+### Backend
+Each resource lives in `backend/src/routes/<resource>/` as `<resource>.routes.ts` (Fastify plugin: routes, `preHandler` auth chain, Zod request/response schemas), `.controller.ts` (thin HTTP glue), `.service.ts` (all Drizzle queries) and `.schema.ts` (Zod schemas). New resources follow the same split.
 
-`backend/src/index.ts` is the composition root: it registers the error handler, CORS, Swagger UI (`/admin/docs`), and each resource's route plugin (`health`, `cooperativeRoutes`, `userRoutes`, `routeRoutes`, `vehicleRoutes`). It also binds `process.env.PORT` (falling back to 3333 for local dev without an env file).
+`src/server.ts` builds the app (error handler, Swagger at `/admin/docs`, CORS, websocket, every route plugin) without listening; `src/index.ts` listens on `PORT` (3333 if unset) and starts the background jobs (`integrations/multiportal-sync.ts`, `integrations/proximity-notifier.ts`); `src/openapi.ts` writes the OpenAPI document.
+
+**API types are generated, not hand-written.** The Zod schemas are the API contract: after changing one, run `pnpm openapi` (backend) then `npm run api:types` (frontend). `frontend/lib/types.ts` derives every API shape from the generated `lib/api-types.ts` (OpenAPI 3.1, so `[lat, lng]` tuples survive); only frontend-only shapes are written there.
+
+**Geometry never leaves the DB as WKT.** The API speaks `{lat, lng}` points and `[lat, lng][]` lines (Leaflet's order); `src/lib/geometry.ts` builds the SQL both ways (`pointFromLatLng`, `lineLatLngs`). PostGIS columns are Drizzle `customType`s (Drizzle's `geometry()` only does Points and ignores SRID) that are never read as values.
+
+**Drizzle gotcha:** in a single-table `select`, Drizzle renders `${table.column}` as a bare `"column"`. Inside a correlated subquery that silently binds to the subquery's own table — write `${table}.column` (see `VehicleService.findAll`'s `lastPosition`).
 
 ### Auth & multi-tenancy
-- JWT auth: `src/lib/jwt.ts` signs/verifies HS256 tokens (`JWT_SECRET` env var required, no default). Payload is `{ userId, email, role, cooperativeId }`.
-- `authenticate` (`src/middleware/auth.middleware.ts`) reads the `Bearer` header and attaches `request.user`; `requireRole(...roles)` gates by role string (`"admin"`, `"cooperative_admin"`, `"user"`).
-- Tenant isolation is done per-controller, not via a shared middleware: each controller defines its own local `getCooperativeFilter(request)` helper that returns `request.user.cooperativeId` only when `role === "cooperative_admin"`, then passes it as an optional `filterCooperativeId` arg into the service's `findAll`/`findById`/`update`/`delete` methods, which AND it into the Drizzle `where` clause. `"admin"` role gets no filter (sees everything). Because `getCooperativeFilter` never scopes plain `"user"` role either, that role is deliberately kept off every vehicle/route endpoint (`vehicle.routes.ts`, `route.routes.ts` no longer list `"user"` in their `requireRole(...)` calls) — a self-registered citizen (`POST /register`, public) must never reach unscoped fleet/route data. `/cooperatives` is the one exception: its `list()` has an explicit `role === "user"` branch returning all *active* cooperatives (routine directory info, not tenant-scoped data), unrelated to the `getCooperativeFilter` pattern — `role === "cooperative_admin"` shares that same branch too, so a cooperative_admin can populate a "lend this vehicle to..." cooperative picker (see vehicle loans below) without gaining any tenant-scoped access. Follow the `getCooperativeFilter` + `filterCooperativeId` pattern when adding tenant-scoped resources, and default new resources to leaving `"user"` out of `requireRole(...)` unless there's a specific reason a citizen needs read access.
-- **Vehicle loans**: a vehicle can be lent to another cooperative without changing ownership — `vehicles.cooperativeId` stays the owner, `vehicles.loanedToCooperativeId` (nullable) marks who currently holds it. `VehicleService.findAll` is the one place `filterCooperativeId` is OR'd instead of AND'd (`cooperativeId = filter OR loanedToCooperativeId = filter`), so a borrower's fleet list/route-builder vehicle picker includes vehicles lent to them; `findById`/`update`/`delete` stay owner-only (AND'd, unchanged), so a borrower can see but never edit/delete a vehicle it doesn't own. `loanedToCooperativeId` is deliberately absent from `createVehicleSchema`/`updateVehicleSchema` — it can only be set/cleared via `POST /vehicles/:id/loan` and `POST /vehicles/:id/loan/return` (`VehicleService.loanTo`/`returnLoan`), which check `findConflictingRoutes` (any `collectionRoutes` row still pointing at that vehicle with status `planned`/`active`) first and respond `409` with the conflicting routes unless the caller passes `confirmUnlink: true`, in which case those routes' `vehicleId` is cleared in the same transaction as the loan change. Follow this confirm-then-unlink pattern for any future mutation that can silently orphan a route's vehicle assignment.
-- Login (`POST /login`) and `GET /me` live in `user.routes.ts`, not a separate auth module.
+- JWT (`src/lib/jwt.ts`, HS256, `JWT_SECRET` required): `{ userId, email, role, cooperativeId }`. Two roles only: `"cooperative_admin"` (the dashboard; always has a `cooperativeId`) and `"user"` (citizens, self-registered via public `POST /register`; never has one) — `users` CHECKs enforce both. **There is no global admin, by design**: cooperatives and their admin accounts are created straight in the database by whoever maintains the system (`pnpm password:hash` makes the argon2id hash `users.password` needs; README has the SQL). Emails are always lowercase (Zod normalizes, the DB has a CHECK).
+- Tenant isolation (`src/middleware/auth.middleware.ts`): every dashboard endpoint is behind `requireCooperativeAdmin`, and `getCooperativeId(request)` is the caller's cooperative — services take it as a **required** `cooperativeId` and AND it into their `where`; single loaded rows are compared to it directly. Citizens get 403 on every vehicle/route/cooperative-admin endpoint. `GET /cooperatives` lists the active cooperatives to every role — directory info, used by citizens and by the "lend to…" picker.
+- **Vehicle loans**: `vehicles.cooperativeId` is the owner, `loanedToCooperativeId` who currently holds it. `VehicleService.findAll`/`findVisible` let the borrower see and use it (fleet list, assigning it to a route, posting GPS); `findById`/`update`/`delete`/lending stay owner-only. Lending and returning (`POST /vehicles/:id/loan`, `.../loan/return`, both `VehicleService.setLoan`) answer `409` with the routes still using the vehicle unless `confirmUnlink: true`, which clears those routes' `vehicleId` in the same transaction. Follow this confirm-then-unlink pattern for any mutation that could silently orphan a route's vehicle.
 
-### Data model (`backend/src/db/schema.ts`, Drizzle + Postgres/PostGIS)
-`cooperatives` → `users` / `vehicles` / `collectionRoutes` (all FK'd to a cooperative). `vehicles` → `vehiclePositions` (GPS history). `streets` is the routable street network (populated externally via pgRouting/osm2pgsql tooling, not through the app) with `source`/`target`/`cost`/`reverseCost` columns pgRouting expects. `collectionRoutes` → `routeStreets` is an ordered join table (`stopOrder`, `direction`) representing the planned stop sequence of a route along the street graph.
+### Routes and the street graph
+`streets` is the routable network, loaded from OSM by `streets:import` (not through the app), with the `source`/`target`/`cost`/`reverseCost` pgRouting expects. A route (`collectionRoutes`: vehicle + weekly `daysOfWeek`/`shift`/`startTime`) has an ordered `routeStreets` sequence: the stops the cooperative picked (`isStop`) plus the connectors pgRouting filled in between. `POST /routes` and `PUT /routes/:id` take schedule **and** stops together (`RouteService.save`): the path is computed first (`computePath`, one `pgr_dijkstra` call for every pair of stops; an unplannable sequence throws `RoutePlanError` → 400), then the route and its streets are written in one transaction. Every stop is driven in its segment's geometry direction (source→target).
 
-`vehiclePositions.location` (`geometry(Point,4326)`) and `streets.geom` (`geometry(LineString,4326)`) are real PostGIS columns, modeled in `schema.ts` via a `customType` (Drizzle's built-in `geometry()` only supports Points and silently ignores SRID, so it can't represent either column correctly). The app-level contract is WKT text in/out (e.g. `"POINT(lng lat)"`): writes rely on Postgres's implicit text→geometry cast, and reads must go through `ST_AsText(...)` — see `positionColumns` in `vehicle.service.ts` for the pattern. There is currently no service reading `streets.geom`, so if one is added it needs the same `ST_AsText` treatment.
+**Collection side / stretch and the citizen's address**: a cooperative can collect only one side of a block, and only part of it. Each stop carries `side` (`both` | `left` | `right`, relative to source→target) and `startFraction`/`endFraction` (0..1, the `ST_LineLocatePoint` space). A citizen's address is a house pin (`users.addressLat/Lng`) plus the segment and side they confirmed (`addressStreetId`/`addressSide`, from `GET /public/address-street`, which suggests the side with `street_side()`); the four go together or not at all. Every "is this citizen served" path — `PublicTrackingService.checkAddress` (public check, citizen screens, notifier) and `get_eta_following_route(route_id, lat, lng, street_id, side)` in `005-maps.sql` — matches on street id + `is_stop` + side + fraction range, and reports `other_side_only` when only the opposite side is collected. `addressStreetId` deliberately has no FK: `streets:import` TRUNCATEs `streets` with CASCADE (which would wipe `users`) and nulls every user's street/side instead, since ids restart.
 
-### Deployment
-`render.yaml` deploys backend and frontend as separate Docker services on Render plus a managed Postgres DB, wiring `DATABASE_URL` from the DB service and `NEXT_PUBLIC_API_URL=/api` / `BACKEND_URL` between the two app services. Both services bind to `process.env.PORT` (backend defaults to 3001 per `render.yaml`/Dockerfile).
+**Address search** (`GET /public/geocode`, matching in `src/lib/street-search.ts`) queries `streets.name` — plus `streets.neighborhood_names`, so a bairro can be typed along with the street — never an external geocoder (the public Nominatim API forbids search-as-you-type). It's street-level only; the citizen then taps their house. Keep the JS (`normalizeStreetText`) and SQL (`normalizedStreetName`) name folding in sync.
+
+**Bairros**: `neighborhoods` holds the 18 bairro boundaries (`neighborhoods:import` from `backend/data/canoas-bairros.json`, see `backend/data/README.md`). A point's bairro is `ST_Intersects` against them — use the house/cooperative pin, not the street segment, since a border street belongs to both. `streets.neighborhood_names` is a derived copy for the search, recomputed by both imports (`src/db/street-neighborhoods.ts`).
+
+### Tracking and notifications
+GPS comes from the Multiportal sync (or `POST /vehicles/:id/positions` for testing) through `lib/position-ingest.ts`, which stores the position and broadcasts it on the public `/ws/tracking` websocket. A citizen has proximity notifications on while they have at least one push subscription (`/me` reports it as `notifyProximity`); turning them off deletes all of them. The notifier runs every minute, only for citizens whose stop is on a route that started today, and records `users.proximity_notified_on` so each collection notifies once.
+
+### Announcements
+Images live in `announcement_images` (bytes), served publicly by `GET /announcement-images/:id` with an immutable cache header; the feed only carries their ids. Uploads still arrive as base64 data URLs (hence the 6MB body limits in Fastify and Next server actions); on update, an omitted image is kept and `null` removes it.
+
+### Frontend
+The dashboard layout turns away anyone but a cooperative_admin; dashboard pages call `requireCooperativeAdmin()` (`lib/auth.ts`) for the token and their non-null `cooperativeId`. `lib/data.ts` holds the server-only typed API calls (`apiFetch` in `lib/api.ts`, always with the signed-in user's own token from the httpOnly session cookie); `lib/public-api.ts` is the client-side counterpart for anonymous endpoints, through the `/api` rewrite in `next.config.ts`. Every map renders `app/base-map.tsx` (OSM tiles + attribution) and is loaded through a `next/dynamic({ ssr: false })` wrapper (Leaflet needs `window`). Live positions come from `lib/use-fleet-tracking.ts` (`useVehicleTracking` is its one-vehicle case).

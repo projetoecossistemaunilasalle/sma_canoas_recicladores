@@ -3,10 +3,12 @@ import jwt from "jsonwebtoken"
 const SECRET = process.env.JWT_SECRET!
 const EXPIRES_IN = (process.env.JWT_EXPIRES_IN || "7d") as jwt.SignOptions["expiresIn"]
 
+export type Role = "user" | "cooperative_admin"
+
 export interface JwtPayload {
   userId: string
   email: string
-  role: string
+  role: Role
   cooperativeId?: string | null
 }
 

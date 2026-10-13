@@ -57,6 +57,17 @@ export function CollectionPanel({ address, result, onReset, mobileBottomClass = 
         </div>
       ) : null}
 
+      {result.status === "other_side_only" ? (
+        <div className="space-y-1">
+          <p className="text-title-lg text-on-surface">Coleta só do outro lado da rua</p>
+          <p className="text-body-md text-on-surface-variant">
+            O caminhão passa na sua rua {result.daysAhead === 0 ? "hoje" : weekdayLabelFromOffset(result.daysAhead)} às{" "}
+            {formatTime(result.startTime)},
+            mas nesse trecho ele coleta só do lado oposto ao da sua casa.
+          </p>
+        </div>
+      ) : null}
+
       {result.status === "scheduled_future" ? (
         <div className="space-y-1">
           <p className="text-body-md text-on-surface-variant">Próxima coleta</p>

@@ -1,17 +1,11 @@
-import { redirect } from "next/navigation";
-import { requireUser } from "@/lib/auth";
+import { requireCooperativeAdmin } from "@/lib/auth";
 import { getAnnouncements } from "@/lib/data";
 import { PageHeader } from "../page-header";
 import { AvisosForm } from "./avisos-form";
 
 export default async function DashboardAvisosPage() {
-  const { token, user } = await requireUser();
-
-  if (user.role !== "cooperative_admin" || !user.cooperativeId) {
-    redirect("/dashboard");
-  }
-
-  const recentPosts = await getAnnouncements(token, { cooperativeId: user.cooperativeId });
+  const { token, cooperativeId } = await requireCooperativeAdmin();
+  const recentPosts = await getAnnouncements(token, { cooperativeId });
 
   return (
     <div className="flex flex-col gap-6">

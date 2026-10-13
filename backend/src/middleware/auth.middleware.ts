@@ -22,43 +22,24 @@ export async function authenticate(request: FastifyRequest, reply: FastifyReply)
   }
 }
 
-export function requireRole(...roles: string[]) {
-  return async (request: FastifyRequest, reply: FastifyReply) => {
-    if (!request.user) {
-      return reply.status(401).send({ message: "Unauthorized" })
-    }
-    if (!roles.includes(request.user.role)) {
-      return reply.status(403).send({ message: "Forbidden: insufficient permissions" })
-    }
+async function cooperativeAdminOnly(request: FastifyRequest, reply: FastifyReply) {
+  if (request.user?.role !== "cooperative_admin" || !request.user.cooperativeId) {
+    return reply.status(403).send({ message: "Forbidden: insufficient permissions" })
   }
 }
 
-// The exact preHandler combinations every resource's routes.ts reaches for —
-// named here once instead of each route file re-typing the same role list.
+// Any signed-in user (citizens included).
 export const requireAuth = [authenticate]
-export const requireStaff = [authenticate, requireRole("admin", "cooperative_admin")]
-export const requireAnyAuthed = [authenticate, requireRole("admin", "cooperative_admin", "user")]
-export const requireAdmin = [authenticate, requireRole("admin")]
-export const requireCooperativeAdmin = [authenticate, requireRole("cooperative_admin")]
+// The cooperative dashboard. There's no global admin: every staff account
+// belongs to exactly one cooperative (users has a CHECK for it), and can only
+// ever see and touch that cooperative's data.
+export const requireCooperativeAdmin = [authenticate, cooperativeAdminOnly]
 
-// A cooperative_admin only ever sees/touches its own cooperative's rows;
-// "admin" sees everything (undefined = no filter). Every tenant-scoped
-// controller (users, vehicles, routes) uses this same rule — see CLAUDE.md's
-// "Auth & multi-tenancy" section for the filterCooperativeId pattern this feeds.
-export function getCooperativeFilter(request: FastifyRequest): string | undefined {
-  const user = request.user as JwtPayload
-  if (user.role === "cooperative_admin" && user.cooperativeId) {
-    return user.cooperativeId
-  }
-  return undefined
-}
-
-// A cooperative_admin's writes are always pinned to its own cooperative,
-// regardless of what the request body asked for; "admin" (and any role
-// without a cooperativeId) keeps whatever the caller requested.
-export function scopeCooperativeId(currentUser: JwtPayload, requestedCooperativeId: string | undefined): string | undefined {
-  if (currentUser.role === "cooperative_admin") {
-    return currentUser.cooperativeId ?? undefined
-  }
-  return requestedCooperativeId
+/**
+ * The caller's cooperative — the tenant every query behind
+ * requireCooperativeAdmin is scoped to (services take it as a required
+ * `cooperativeId` and AND it into their WHERE).
+ */
+export function getCooperativeId(request: FastifyRequest): string {
+  return (request.user as JwtPayload).cooperativeId!
 }

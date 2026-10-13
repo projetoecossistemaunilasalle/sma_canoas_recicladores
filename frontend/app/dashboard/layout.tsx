@@ -9,7 +9,7 @@ export default async function DashboardLayout({
 }) {
   const { user } = await requireUser();
 
-  if (user.role !== "admin" && user.role !== "cooperative_admin") {
+  if (user.role !== "cooperative_admin") {
     return (
       <main className="min-h-screen flex flex-col items-center justify-center gap-4 bg-background p-8 text-center">
         <span className="material-symbols-outlined text-primary text-[48px]">
@@ -47,7 +47,7 @@ export default async function DashboardLayout({
             </span>
           </div>
         </div>
-        <DashboardNav role={user.role} />
+        <DashboardNav />
         <div className="p-3 md:p-8 md:border-t border-outline-variant md:mt-auto flex items-center justify-between gap-3">
           <div className="hidden sm:flex items-center gap-4 min-w-0">
             <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center shrink-0">
@@ -60,7 +60,7 @@ export default async function DashboardLayout({
                 {user.name}
               </p>
               <p className="text-xs text-on-surface-variant truncate">
-                {user.role === "admin" ? "Administrador" : "Cooperativa"}
+                Cooperativa
               </p>
             </div>
           </div>
@@ -79,7 +79,7 @@ export default async function DashboardLayout({
       <div className="flex-1 md:pl-72">
         <main className="px-4 sm:px-5 py-6 sm:py-8 pb-24 md:pb-8">{children}</main>
       </div>
-      <DashboardMobileNav role={user.role} />
+      <DashboardMobileNav />
     </div>
   );
 }

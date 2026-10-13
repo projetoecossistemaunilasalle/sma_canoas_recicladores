@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
+import { userAddressPoint } from "@/lib/address-point";
 import { CitizenHomeSummary } from "./citizen-home-summary";
 
 export default async function CitizenHomePage() {
   const { user } = await requireUser();
+  const addressPoint = userAddressPoint(user);
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 pb-28 flex flex-col gap-6">
@@ -12,8 +14,8 @@ export default async function CitizenHomePage() {
         <h1 className="text-display-lg text-on-surface">Como posso ajudar você hoje?</h1>
       </div>
 
-      {user.addressLat != null && user.addressLng != null ? (
-        <CitizenHomeSummary lat={user.addressLat} lng={user.addressLng} />
+      {addressPoint ? (
+        <CitizenHomeSummary point={addressPoint} />
       ) : (
         <Link
           href="/citizen/perfil"

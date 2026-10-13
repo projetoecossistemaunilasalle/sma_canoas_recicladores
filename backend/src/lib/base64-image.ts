@@ -1,4 +1,4 @@
-const BASE64_IMAGE_PREFIX = /^data:image\/(png|jpe?g|webp|gif);base64,([A-Za-z0-9+/]+=*)$/
+const BASE64_IMAGE = /^data:(image\/(?:png|jpe?g|webp|gif));base64,([A-Za-z0-9+/]+=*)$/
 
 export const MAX_IMAGE_BYTES = 1_000_000 // 1MB raw, before base64 inflation
 
@@ -6,7 +6,7 @@ export const MAX_IMAGE_BYTES = 1_000_000 // 1MB raw, before base64 inflation
 // size doesn't exceed MAX_IMAGE_BYTES — computed from the base64 payload
 // length (no need to actually decode the buffer).
 export function isValidBase64Image(value: string): boolean {
-  const match = BASE64_IMAGE_PREFIX.exec(value)
+  const match = BASE64_IMAGE.exec(value)
   if (!match) return false
 
   const payload = match[2]
@@ -14,4 +14,10 @@ export function isValidBase64Image(value: string): boolean {
   const decodedBytes = (payload.length * 3) / 4 - padding
 
   return decodedBytes <= MAX_IMAGE_BYTES
+}
+
+/** A data URL already checked by isValidBase64Image, as the bytes to store. */
+export function decodeBase64Image(value: string): { mime: string; data: Buffer } {
+  const [, mime, payload] = BASE64_IMAGE.exec(value)!
+  return { mime, data: Buffer.from(payload, "base64") }
 }

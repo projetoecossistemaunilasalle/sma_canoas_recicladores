@@ -1,78 +1,52 @@
 import Link from "next/link";
-import { requireUser } from "@/lib/auth";
-import {
-  getVehicles,
-  getRoutes,
-  getCooperative,
-  getLatestPosition,
-} from "@/lib/data";
-import { parseWktPoint, routeLiveStatusLabel, dayOfWeekLabel, shiftLabel, formatTime } from "@/lib/format";
-import type { VehiclePosition } from "@/lib/types";
+import { requireCooperativeAdmin } from "@/lib/auth";
+import { getVehicles, getRoutes, getCooperative } from "@/lib/data";
+import { routeLiveStatusLabel, routeScheduleLabel } from "@/lib/format";
 import { FleetMonitor, type FleetVehicleInfo } from "./fleet-monitor";
 import { PageHeader } from "./page-header";
 
 export default async function DashboardPage() {
-  const { token, user } = await requireUser();
+  const { token, cooperativeId } = await requireCooperativeAdmin();
 
   const [vehicles, routes, cooperative] = await Promise.all([
     getVehicles(token),
     getRoutes(token),
-    user.cooperativeId ? getCooperative(token, user.cooperativeId) : null,
+    getCooperative(token, cooperativeId),
   ]);
 
   const vehicleById = new Map(vehicles.map((v) => [v.id, v]));
 
-  const positions = new Map<string, VehiclePosition | null>(
-    await Promise.all(
-      vehicles.map(
-        async (v) => [v.id, await getLatestPosition(token, v.id)] as const
-      )
-    )
-  );
-
   const activeVehicles = vehicles.filter((v) => v.active).length;
-  // Real-time signal (today's schedule + current time inside the shift
-  // window), not just `status` — every route sits at status "active" from
-  // creation onward, so that alone can't tell "scheduled" from "happening
-  // right now" (see RouteService.withRunningStatus on the backend).
+  // Today is one of the route's days and the time is inside its shift (see
+  // RouteService.withRunningStatus on the backend).
   const runningRoutes = routes.filter((r) => r.isRunningNow).length;
   // Routes actually running now surface first; the rest keep their existing order.
   const sortedRoutes = [...routes].sort((a, b) => Number(b.isRunningNow) - Number(a.isRunningNow));
 
-  const fleetVehicles: FleetVehicleInfo[] = vehicles.map((vehicle) => {
-    const position = positions.get(vehicle.id);
-    const coords = position ? parseWktPoint(position.location) : null;
-    return {
-      id: vehicle.id,
-      plate: vehicle.plate,
-      model: vehicle.model,
-      color: vehicle.color,
-      type: vehicle.type,
-      active: vehicle.active,
-      initialLat: coords?.lat ?? null,
-      initialLng: coords?.lng ?? null,
-      initialRecordedAt: position?.recordedAt ?? null,
-    };
-  });
-
-  const title = cooperative
-    ? cooperative.name
-    : "Todas as Cooperativas";
+  const fleetVehicles: FleetVehicleInfo[] = vehicles.map((vehicle) => ({
+    id: vehicle.id,
+    plate: vehicle.plate,
+    model: vehicle.model,
+    color: vehicle.color,
+    type: vehicle.type,
+    active: vehicle.active,
+    initialLat: vehicle.lastPosition?.lat ?? null,
+    initialLng: vehicle.lastPosition?.lng ?? null,
+    initialRecordedAt: vehicle.lastPosition?.recordedAt ?? null,
+  }));
 
   return (
     <div className="flex flex-col gap-8">
       <PageHeader
         eyebrow="Painel da Cooperativa"
-        title={title}
-        description={`Acompanhe a frota e as rotas de coleta ${cooperative ? "da sua cooperativa" : "de todas as cooperativas"}.`}
+        title={cooperative.name}
+        description="Acompanhe a frota e as rotas de coleta da sua cooperativa."
       />
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <QuickAction href="/dashboard/routes/new" icon="add_road" label="Nova Rota" />
         <QuickAction href="/dashboard/vehicles/new" icon="local_shipping" label="Novo Veículo" />
-        {user.role === "cooperative_admin" ? (
-          <QuickAction href="/dashboard/avisos" icon="campaign" label="Criar Aviso" />
-        ) : null}
+        <QuickAction href="/dashboard/avisos" icon="campaign" label="Criar Aviso" />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -137,10 +111,7 @@ export default async function DashboardPage() {
                       {vehicle?.model ? ` · ${vehicle.model}` : ""}
                     </p>
                     <p className="text-body-md text-xs text-on-surface-variant truncate">
-                      {(route.daysOfWeek ?? []).map(dayOfWeekLabel).join(", ") || "Sem dias"}
-                      {" · "}
-                      {route.shift ? shiftLabel(route.shift) : "Sem turno"}
-                      {route.startTime ? ` · ${formatTime(route.startTime)}` : ""}
+                      {routeScheduleLabel(route)}
                     </p>
                   </div>
                   <span

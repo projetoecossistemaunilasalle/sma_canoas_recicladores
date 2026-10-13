@@ -1,35 +1,42 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AddressSearch } from "@/app/address-search";
+import { AddressPicker } from "@/app/address-picker";
 import { updateProfileAction } from "../actions";
-import { subscribeToPush, unsubscribeFromPush } from "@/lib/push";
-import type { CurrentUser, GeocodeResult } from "@/lib/types";
+import { useProximityNotifications } from "@/lib/push";
+import { useAddressPin } from "@/lib/use-address-pin";
+import type { CitizenAddress, CurrentUser } from "@/lib/types";
 
-export function ProfileForm({ user }: { user: CurrentUser }) {
+export function ProfileForm({ user, initialAddress }: { user: CurrentUser; initialAddress: CitizenAddress | null }) {
   const [name, setName] = useState(user.name);
   const [password, setPassword] = useState("");
-  const [address, setAddress] = useState<GeocodeResult | null>(
-    user.address && user.addressLat != null && user.addressLng != null
-      ? { label: user.address, lat: user.addressLat, lng: user.addressLng }
-      : null
-  );
-  const [notifyOn, setNotifyOn] = useState(user.notifyProximity);
-  const [notifyPending, setNotifyPending] = useState(false);
-  const [notifyError, setNotifyError] = useState<string | null>(null);
+  const addressPin = useAddressPin(initialAddress);
+  const notify = useProximityNotifications(user.notifyProximity);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [pending, startTransition] = useTransition();
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setStatus(null);
+    if (addressPin.incomplete) {
+      setStatus({ type: "error", message: "Marque sua casa no mapa e confirme o lado da rua." });
+      return;
+    }
+    const address = addressPin.value;
     startTransition(async () => {
       const { result, error } = await updateProfileAction({
         name,
         password: password || undefined,
-        address: address?.label,
-        lat: address?.lat,
-        lng: address?.lng,
+        ...(address
+          ? {
+              address: address.label,
+              lat: address.lat,
+              lng: address.lng,
+              addressNumber: address.number,
+              addressStreetId: address.streetId,
+              addressSide: address.side,
+            }
+          : {}),
       });
       if (error) {
         setStatus({ type: "error", message: error });
@@ -38,28 +45,6 @@ export function ProfileForm({ user }: { user: CurrentUser }) {
         setPassword("");
       }
     });
-  }
-
-  async function handleToggleNotify() {
-    setNotifyError(null);
-    setNotifyPending(true);
-    try {
-      if (notifyOn) {
-        await unsubscribeFromPush();
-        await updateProfileAction({ notifyProximity: false });
-        setNotifyOn(false);
-      } else {
-        const ok = await subscribeToPush();
-        if (ok) {
-          await updateProfileAction({ notifyProximity: true });
-          setNotifyOn(true);
-        } else {
-          setNotifyError("Ative as notificações do navegador pra usar esse recurso.");
-        }
-      }
-    } finally {
-      setNotifyPending(false);
-    }
   }
 
   return (
@@ -79,11 +64,7 @@ export function ProfileForm({ user }: { user: CurrentUser }) {
 
         <div>
           <p className="text-label-lg text-on-surface-variant mb-1">Endereço da coleta</p>
-          <AddressSearch
-            onSelect={setAddress}
-            onClear={() => setAddress(null)}
-            selectedLabel={address?.label ?? null}
-          />
+          <AddressPicker state={addressPin} />
         </div>
 
         <div>
@@ -122,20 +103,20 @@ export function ProfileForm({ user }: { user: CurrentUser }) {
           <p className="text-body-md text-on-surface-variant">
             Receba um aviso quando o caminhão estiver a 5 minutos da sua rua.
           </p>
-          {notifyError ? <p className="text-error text-label-lg mt-1">{notifyError}</p> : null}
+          {notify.error ? <p className="text-error text-label-lg mt-1">{notify.error}</p> : null}
         </div>
         <button
           type="button"
-          onClick={handleToggleNotify}
-          disabled={notifyPending}
-          aria-pressed={notifyOn}
+          onClick={notify.toggle}
+          disabled={notify.pending}
+          aria-pressed={notify.on}
           className={`shrink-0 w-12 h-7 rounded-full transition-colors relative disabled:opacity-60 ${
-            notifyOn ? "bg-primary" : "bg-outline-variant"
+            notify.on ? "bg-primary" : "bg-outline-variant"
           }`}
         >
           <span
             className={`absolute top-0.5 left-0.5 w-6 h-6 rounded-full bg-white shadow transition-transform ${
-              notifyOn ? "translate-x-5" : ""
+              notify.on ? "translate-x-5" : ""
             }`}
           />
         </button>

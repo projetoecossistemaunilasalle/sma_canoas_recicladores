@@ -1,6 +1,5 @@
 import type { NextConfig } from "next";
-
-const backendUrl = process.env.BACKEND_URL || "http://backend:3001";
+import { BACKEND_URL } from "./lib/constants";
 
 const nextConfig: NextConfig = {
   output: "standalone",
@@ -15,11 +14,11 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: `${backendUrl}/:path*`,
+        destination: `${BACKEND_URL}/:path*`,
       },
       {
         source: "/api",
-        destination: `${backendUrl}`,
+        destination: BACKEND_URL,
       },
     ];
   },

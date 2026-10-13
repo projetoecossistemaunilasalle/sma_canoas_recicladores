@@ -7,12 +7,6 @@ const NAV_ITEMS = [
   { href: "/dashboard", label: "Dashboard", shortLabel: "Painel", icon: "dashboard" },
   { href: "/dashboard/routes", label: "Rotas de Coleta", shortLabel: "Rotas", icon: "route" },
   { href: "/dashboard/vehicles", label: "Veículos", shortLabel: "Veículos", icon: "local_shipping" },
-];
-
-// "admin" has no cooperativeId, so these two are meaningless for that role —
-// each links to a page that redirects admin away on its own, but hiding the
-// entry avoids a dead-end click.
-const COOPERATIVE_ADMIN_NAV_ITEMS = [
   { href: "/dashboard/cooperativa", label: "Minha Cooperativa", shortLabel: "Cooperativa", icon: "store" },
   { href: "/dashboard/avisos", label: "Avisos e Notícias", shortLabel: "Avisos", icon: "campaign" },
 ];
@@ -23,10 +17,6 @@ const COMING_SOON_NAV = [
   { icon: "settings", label: "Configurações" },
 ];
 
-function navItemsForRole(role: string) {
-  return role === "cooperative_admin" ? [...NAV_ITEMS, ...COOPERATIVE_ADMIN_NAV_ITEMS] : NAV_ITEMS;
-}
-
 // Exact match for the /dashboard root — otherwise it'd also light up for
 // every sub-route (/dashboard/routes, /dashboard/vehicles, ...).
 function isActive(pathname: string, href: string) {
@@ -34,13 +24,12 @@ function isActive(pathname: string, href: string) {
 }
 
 /** Desktop/tablet-landscape sidebar nav — hidden below md, where DashboardMobileNav takes over. */
-export function DashboardNav({ role }: { role: string }) {
+export function DashboardNav() {
   const pathname = usePathname();
-  const items = navItemsForRole(role);
 
   return (
     <nav className="flex-1 px-4 space-y-1 hidden md:block">
-      {items.map((item) => (
+      {NAV_ITEMS.map((item) => (
         <Link
           key={item.href}
           href={item.href}
@@ -73,14 +62,13 @@ export function DashboardNav({ role }: { role: string }) {
 }
 
 /** Fixed bottom tab bar for mobile/small-tablet — mirrors app/citizen/citizen-tab-bar.tsx's pattern. */
-export function DashboardMobileNav({ role }: { role: string }) {
+export function DashboardMobileNav() {
   const pathname = usePathname();
-  const items = navItemsForRole(role);
 
   return (
     <nav className="md:hidden fixed bottom-0 inset-x-0 z-[1000] bg-surface-container-lowest border-t border-outline-variant/40 shadow-[0_-2px_12px_rgba(0,0,0,0.08)]">
       <div className="flex items-stretch overflow-x-auto">
-        {items.map((item) => (
+        {NAV_ITEMS.map((item) => (
           <Link
             key={item.href}
             href={item.href}

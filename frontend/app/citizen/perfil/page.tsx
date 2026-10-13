@@ -1,9 +1,28 @@
 import { requireUser } from "@/lib/auth";
+import { getStreet } from "@/lib/data";
 import { logout } from "@/app/login/actions";
 import { ProfileForm } from "./profile-form";
+import type { CitizenAddress } from "@/lib/types";
 
 export default async function PerfilPage() {
-  const { user } = await requireUser();
+  const { token, user } = await requireUser();
+
+  // The picker redraws the saved street + side, so it needs that segment's
+  // geometry — the user record only keeps its id.
+  const street = user.addressStreetId != null ? await getStreet(token, user.addressStreetId) : null;
+  const initialAddress: CitizenAddress | null =
+    user.address && user.addressLat != null && user.addressLng != null && street && user.addressSide
+      ? {
+          label: user.address,
+          lat: user.addressLat,
+          lng: user.addressLng,
+          number: user.addressNumber,
+          streetId: street.id,
+          streetName: street.name,
+          streetLine: street.line,
+          side: user.addressSide,
+        }
+      : null;
 
   return (
     <main className="max-w-2xl mx-auto px-4 py-8 pb-28 flex flex-col gap-6">
@@ -17,7 +36,7 @@ export default async function PerfilPage() {
         </div>
       </div>
 
-      <ProfileForm user={user} />
+      <ProfileForm user={user} initialAddress={initialAddress} />
 
       <form action={logout}>
         <button type="submit" className="text-label-lg text-error hover:underline">

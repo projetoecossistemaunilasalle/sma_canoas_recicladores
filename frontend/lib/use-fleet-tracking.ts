@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { computeBearing } from "./geo";
 
-interface TrackedPosition {
+export interface TrackedPosition {
   lat: number;
   lng: number;
   recordedAt: string;
+  /** Derived from this vehicle's previous position — there's no heading column in vehicle_positions. */
+  heading: number | null;
 }
 
 interface PositionMessage {
@@ -18,13 +21,17 @@ interface PositionMessage {
 
 function resolveWsUrl(): string {
   if (process.env.NEXT_PUBLIC_WS_URL) return process.env.NEXT_PUBLIC_WS_URL;
+  // Dev fallback: same host as the page, backend's default local port.
   const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
   return `${protocol}//${window.location.hostname}:3001`;
 }
 
-// Same public /ws/tracking channel as useVehicleTracking, but subscribes to
-// a whole set of vehicles over one shared connection — for the cooperative
-// fleet dashboard, which needs to watch many trucks at once rather than one.
+/**
+ * Live positions for a set of vehicles over the public /ws/tracking channel
+ * (backend/src/routes/ws/ws.routes.ts) — one connection for all of them,
+ * reconnecting with backoff if it drops. The fleet dashboard watches the
+ * whole fleet; useVehicleTracking is the one-vehicle case.
+ */
 export function useFleetTracking(vehicleIds: string[]): Record<string, TrackedPosition> {
   const [positions, setPositions] = useState<Record<string, TrackedPosition>>({});
   const key = vehicleIds.slice().sort().join(",");
@@ -51,11 +58,19 @@ export function useFleetTracking(vehicleIds: string[]): Record<string, TrackedPo
       socket.addEventListener("message", (event) => {
         try {
           const msg = JSON.parse(event.data) as PositionMessage;
-          if (msg.type !== "position") return;
-          setPositions((prev) => ({
-            ...prev,
-            [msg.vehicleId]: { lat: msg.lat, lng: msg.lng, recordedAt: msg.recordedAt },
-          }));
+          if (msg.type !== "position" || !ids.includes(msg.vehicleId)) return;
+          setPositions((prev) => {
+            const last = prev[msg.vehicleId];
+            return {
+              ...prev,
+              [msg.vehicleId]: {
+                lat: msg.lat,
+                lng: msg.lng,
+                recordedAt: msg.recordedAt,
+                heading: last ? computeBearing(last, msg) : null,
+              },
+            };
+          });
         } catch {
           // ignore malformed messages
         }
@@ -75,6 +90,7 @@ export function useFleetTracking(vehicleIds: string[]): Record<string, TrackedPo
       closedByEffect = true;
       if (reconnectTimer) clearTimeout(reconnectTimer);
       socket?.close();
+      setPositions({});
     };
   }, [key]);
 

@@ -3,9 +3,9 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { getToken } from "@/lib/session";
-import { createVehicle, updateVehicle, deleteVehicle, loanVehicle, returnVehicleLoan, type VehicleInput } from "@/lib/data";
+import { createVehicle, updateVehicle, deleteVehicle, setVehicleLoan } from "@/lib/data";
 import { ApiError } from "@/lib/api";
-import type { ConflictingRoute } from "@/lib/types";
+import type { ConflictingRoute, VehicleInput } from "@/lib/types";
 
 export interface VehicleFormState {
   error?: string;
@@ -16,14 +16,12 @@ function readVehicleForm(formData: FormData): VehicleInput {
   const model = String(formData.get("model") ?? "").trim();
   const color = String(formData.get("color") ?? "").trim();
   const type = String(formData.get("type") ?? "").trim();
-  const cooperativeId = String(formData.get("cooperativeId") ?? "").trim();
 
   return {
     plate: plate || undefined,
     model: model || undefined,
     color: color || undefined,
-    type: type || undefined,
-    cooperativeId: cooperativeId || undefined,
+    type: (type || undefined) as VehicleInput["type"],
     active: formData.get("active") === "on",
   };
 }
@@ -94,52 +92,29 @@ function readRouteConflict(err: ApiError): ConflictingRoute[] | undefined {
   return data?.routes;
 }
 
-export async function loanVehicleAction(
+/**
+ * Bound with the vehicle and whether this lends it (`lend`, reading the target
+ * cooperative from the form) or ends its loan. Either way a 409 brings back
+ * the routes that would lose the vehicle, so the dialog can ask to confirm.
+ */
+export async function vehicleLoanAction(
   vehicleId: string,
+  lend: boolean,
   _prevState: LoanFormState,
   formData: FormData
 ): Promise<LoanFormState> {
   const token = await getToken();
   if (!token) redirect("/login");
 
-  const cooperativeId = String(formData.get("cooperativeId") ?? "").trim();
+  const cooperativeId = lend ? String(formData.get("cooperativeId") ?? "").trim() : null;
   const confirmUnlink = formData.get("confirmUnlink") === "true";
-  if (!cooperativeId) return { error: "Selecione a cooperativa que vai receber o veículo." };
+  if (lend && !cooperativeId) return { error: "Selecione a cooperativa que vai receber o veículo." };
 
   try {
-    await loanVehicle(token, vehicleId, cooperativeId, confirmUnlink);
+    await setVehicleLoan(token, vehicleId, cooperativeId, confirmUnlink);
   } catch (err) {
-    if (err instanceof ApiError) {
-      const conflictRoutes = readRouteConflict(err);
-      if (conflictRoutes) return { error: err.message, conflictRoutes };
-      return { error: err.message };
-    }
-    return { error: "Não foi possível emprestar o veículo." };
-  }
-
-  revalidatePath("/dashboard/vehicles");
-  return { success: true };
-}
-
-export async function returnVehicleLoanAction(
-  vehicleId: string,
-  _prevState: LoanFormState,
-  formData: FormData
-): Promise<LoanFormState> {
-  const token = await getToken();
-  if (!token) redirect("/login");
-
-  const confirmUnlink = formData.get("confirmUnlink") === "true";
-
-  try {
-    await returnVehicleLoan(token, vehicleId, confirmUnlink);
-  } catch (err) {
-    if (err instanceof ApiError) {
-      const conflictRoutes = readRouteConflict(err);
-      if (conflictRoutes) return { error: err.message, conflictRoutes };
-      return { error: err.message };
-    }
-    return { error: "Não foi possível encerrar o empréstimo." };
+    if (err instanceof ApiError) return { error: err.message, conflictRoutes: readRouteConflict(err) };
+    return { error: lend ? "Não foi possível emprestar o veículo." : "Não foi possível encerrar o empréstimo." };
   }
 
   revalidatePath("/dashboard/vehicles");
