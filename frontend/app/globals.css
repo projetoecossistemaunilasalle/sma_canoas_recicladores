@@ -127,6 +127,11 @@ body {
 .leaflet-marker-icon {
   transition: transform 0.6s linear;
 }
+/* ...but the route builder's markers sit still on the street: the transition
+   would only make them trail behind a zoom, and a dragged handle lag the cursor. */
+.leaflet-marker-icon.route-marker {
+  transition: none;
+}
 
 /* Permanent label next to the live truck marker on the public home map. */
 .truck-tooltip {

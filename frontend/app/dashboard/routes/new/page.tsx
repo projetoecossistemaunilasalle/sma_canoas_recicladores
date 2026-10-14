@@ -13,7 +13,7 @@ export default async function NewRoutePage() {
       <PageHeader
         eyebrow="Rotas de Coleta"
         title="Nova Rota"
-        description="Escolha o veículo e a sequência de ruas. O trajeto entre elas é calculado automaticamente pela malha viária."
+        description="Marque no mapa as ruas onde o caminhão vai coletar, na ordem. O caminho entre uma rua e outra é calculado sozinho."
       />
       <RouteBuilder vehicles={vehicles} />
     </div>

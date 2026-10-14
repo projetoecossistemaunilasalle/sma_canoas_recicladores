@@ -172,12 +172,16 @@ export class RouteService {
     const segments = await this.computePath(stopStreetIds)
     const rows = await streetService.findByIds([...new Set(segments.map((s) => s.streetId))])
     const byId = new Map(rows.map((r) => [r.id, r]))
-    return segments.map((seg) => ({
-      streetId: seg.streetId,
-      isStop: seg.isStop,
-      name: byId.get(seg.streetId)?.name ?? null,
-      line: byId.get(seg.streetId)?.line ?? [],
-    }))
+    return segments.map((seg) => {
+      const line = byId.get(seg.streetId)?.line ?? []
+      return {
+        streetId: seg.streetId,
+        isStop: seg.isStop,
+        name: byId.get(seg.streetId)?.name ?? null,
+        // In driving order — a connector driven target→source comes reversed.
+        line: seg.direction === "reverse" ? [...line].reverse() : line,
+      }
+    })
   }
 
   /**

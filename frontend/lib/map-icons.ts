@@ -52,9 +52,9 @@ export function vehicleDivIcon({
   });
 }
 
-export function arrowDivIcon(headingDeg: number, color = "#6A2C91", size = 14) {
+export function arrowDivIcon(headingDeg: number, color = "#6A2C91", size = 14, className = "") {
   return L.divIcon({
-    className: "",
+    className,
     html: `<div style="width:${size}px;height:${size}px;transform:rotate(${headingDeg}deg);">
       <svg width="${size}" height="${size}" viewBox="0 0 24 24" style="filter:drop-shadow(0 1px 1px rgba(0,0,0,0.5));">
         <path d="M12 2 L20 20 L12 15 L4 20 Z" fill="#ffffff" stroke="${color}" stroke-width="1.5"/>

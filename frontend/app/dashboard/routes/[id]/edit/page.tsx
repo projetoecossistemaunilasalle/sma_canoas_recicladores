@@ -25,7 +25,11 @@ export default async function EditRoutePage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader eyebrow="Rotas de Coleta" title="Editar Rota" />
+      <PageHeader
+        eyebrow="Rotas de Coleta"
+        title="Editar Rota"
+        description="Confira no mapa onde o caminhão coleta e por onde ele só passa. Mude a ordem, o lado da rua ou acrescente ruas."
+      />
       <RouteBuilder
         vehicles={vehicles}
         initial={{

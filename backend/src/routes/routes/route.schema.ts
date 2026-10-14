@@ -67,6 +67,8 @@ export const routePreviewSegmentSchema = z.object({
   streetId: z.number(),
   isStop: z.boolean(),
   name: z.string().nullable(),
+  // In the direction the truck drives it (a connector driven target→source
+  // comes reversed), so the builder can draw direction arrows on it.
   line: z.array(latLngTupleSchema),
 })
 
