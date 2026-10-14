@@ -10,7 +10,6 @@ import type {
   CurrentUser,
   FleetVehicle,
   PushSubscriptionInput,
-  RegisterInput,
   RouteInput,
   RoutePreviewSegment,
   RouteStop,
@@ -21,7 +20,7 @@ import type {
 } from "./types";
 
 // Server-only typed wrappers around the backend API (see lib/api.ts).
-// Every call but login/register runs as the signed-in user's own token.
+// Every call but the two logins runs as the signed-in user's own token.
 
 function json(method: string, body: unknown): RequestInit {
   return { method, body: JSON.stringify(body) };
@@ -42,8 +41,9 @@ export function loginUser(email: string, password: string) {
   return apiFetch<AuthResponse>("/login", null, json("POST", { email, password }));
 }
 
-export function registerUser(data: RegisterInput) {
-  return apiFetch<AuthResponse>("/register", null, json("POST", data));
+/** Citizens: the ID token from the "Sign in with Google" button. Creates the account on the first sign-in. */
+export function loginWithGoogle(credential: string) {
+  return apiFetch<AuthResponse>("/login/google", null, json("POST", { credential }));
 }
 
 export function updateProfile(token: string, data: UpdateProfileInput) {

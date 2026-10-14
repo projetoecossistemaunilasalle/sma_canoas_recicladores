@@ -1,7 +1,7 @@
 import { eq, sql } from "drizzle-orm"
 import { db } from "../../db"
 import { users, pushSubscriptions, type NewUser, type NewPushSubscription } from "../../db/schema"
-import { hashPassword } from "../../lib/password"
+import type { GoogleIdentity } from "../../lib/google-auth"
 
 const profileColumns = {
   id: users.id,
@@ -39,20 +39,37 @@ export class UserService {
     return user ?? null
   }
 
-  async create(data: NewUser) {
-    const [user] = await db
+  async findByGoogleSub(sub: string) {
+    const [user] = await db.select().from(users).where(eq(users.googleSub, sub)).limit(1)
+    return user ?? null
+  }
+
+  /**
+   * The citizen a Google account signs in as, created on its first sign-in.
+   * Matched by `sub`, never by email — an existing account with the same
+   * email (a cooperative's) must not be taken over through Google. null when
+   * the email already belongs to another account.
+   */
+  async findOrCreateGoogleUser({ sub, email, name }: GoogleIdentity) {
+    const existing = await this.findByGoogleSub(sub)
+    if (existing) return existing
+
+    const [created] = await db
       .insert(users)
-      .values({ ...data, password: await hashPassword(data.password) })
+      .values({ name, email, googleSub: sub, role: "user" })
+      .onConflictDoNothing()
       .returning()
-    return user
+    // A conflict is either that email, or this same account's first sign-in
+    // racing another one.
+    return created ?? (await this.findByGoogleSub(sub))
   }
 
   async update(id: string, data: Partial<NewUser>) {
-    const payload = { ...data, updatedAt: new Date() }
-    if (data.password) {
-      payload.password = await hashPassword(data.password)
-    }
-    const [user] = await db.update(users).set(payload).where(eq(users.id, id)).returning({ id: users.id })
+    const [user] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning({ id: users.id })
     return user ?? null
   }
 

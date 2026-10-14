@@ -4,8 +4,13 @@ CREATE TABLE IF NOT EXISTS users (
     -- Sempre minúsculo (a API normaliza): sem isso "Admin@x.com" e
     -- "admin@x.com" viram duas contas.
     email TEXT UNIQUE NOT NULL CHECK (email = lower(email)),
-    password TEXT NOT NULL, -- hash argon2id (gerar com `pnpm password:hash` no backend)
-    -- 'user' = munícipe (cadastro público no app); 'cooperative_admin' = quem
+    -- Só contas de cooperativa têm senha: hash argon2id (gerar com
+    -- `pnpm password:hash` no backend).
+    password TEXT,
+    -- Munícipe entra só com a conta Google: este é o `sub` dela, que não muda
+    -- mesmo se o e-mail da conta mudar. A conta é criada no primeiro login.
+    google_sub TEXT UNIQUE,
+    -- 'user' = munícipe (entra pelo Google); 'cooperative_admin' = quem
     -- usa o painel de uma cooperativa. Não há administrador geral: cooperativas
     -- e seus admins são criados direto no banco por quem mantém o sistema.
     role TEXT NOT NULL DEFAULT 'user' CHECK (role IN ('user', 'cooperative_admin')),
@@ -28,7 +33,12 @@ CREATE TABLE IF NOT EXISTS users (
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     -- Admin de cooperativa sempre tem a sua; munícipe nunca tem.
-    CONSTRAINT users_cooperative_matches_role CHECK ((role = 'cooperative_admin') = (cooperative_id IS NOT NULL))
+    CONSTRAINT users_cooperative_matches_role CHECK ((role = 'cooperative_admin') = (cooperative_id IS NOT NULL)),
+    -- Admin de cooperativa entra com senha; munícipe, só pela conta Google.
+    CONSTRAINT users_credentials_match_role CHECK (
+        (role = 'cooperative_admin') = (password IS NOT NULL)
+        AND (role = 'user') = (google_sub IS NOT NULL)
+    )
 );
 
 -- Ter ao menos uma inscrição é o que liga o aviso de proximidade.

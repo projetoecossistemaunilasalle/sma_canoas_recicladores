@@ -641,9 +641,9 @@
         }
       }
     },
-    "/register": {
+    "/login/google": {
       "post": {
-        "summary": "Public citizen self-registration",
+        "summary": "Citizen sign-in with a Google ID token (creates the account on the first one)",
         "tags": [
           "Auth"
         ],
@@ -654,63 +654,20 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "name": {
+                  "credential": {
                     "type": "string",
                     "minLength": 1
-                  },
-                  "email": {
-                    "type": "string",
-                    "format": "email",
-                    "pattern": "^(?!\\.)(?!.*\\.\\.)([A-Za-z0-9_'+\\-\\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\\-]*\\.)+[A-Za-z]{2,}$"
-                  },
-                  "password": {
-                    "type": "string",
-                    "minLength": 6
-                  },
-                  "address": {
-                    "type": "string"
-                  },
-                  "lat": {
-                    "type": "number"
-                  },
-                  "lng": {
-                    "type": "number"
-                  },
-                  "addressNumber": {
-                    "anyOf": [
-                      {
-                        "type": "string",
-                        "maxLength": 20
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "addressStreetId": {
-                    "type": "integer",
-                    "minimum": -9007199254740991,
-                    "maximum": 9007199254740991
-                  },
-                  "addressSide": {
-                    "type": "string",
-                    "enum": [
-                      "left",
-                      "right"
-                    ]
                   }
                 },
                 "required": [
-                  "name",
-                  "email",
-                  "password"
+                  "credential"
                 ]
               }
             }
           }
         },
         "responses": {
-          "201": {
+          "200": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -775,7 +732,64 @@
               }
             }
           },
+          "401": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
           "409": {
+            "description": "Default Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "message"
+                  ],
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "503": {
             "description": "Default Response",
             "content": {
               "application/json": {
@@ -971,10 +985,6 @@
                   "name": {
                     "type": "string",
                     "minLength": 1
-                  },
-                  "password": {
-                    "type": "string",
-                    "minLength": 6
                   },
                   "address": {
                     "type": "string"

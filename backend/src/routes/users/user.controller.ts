@@ -1,14 +1,15 @@
 import type { FastifyReply, FastifyRequest } from "fastify"
 import { UserService } from "./user.service"
 import { verifyPassword } from "../../lib/password"
+import { isGoogleSignInConfigured, verifyGoogleIdToken, type GoogleIdentity } from "../../lib/google-auth"
 import { signToken } from "../../lib/jwt"
 import type { JwtPayload } from "../../lib/jwt"
 import type { User } from "../../db/schema"
-import type { LoginInput, PushSubscriptionInput, RegisterInput, UpdateProfileInput } from "./user.schema"
+import type { GoogleLoginInput, LoginInput, PushSubscriptionInput, UpdateProfileInput } from "./user.schema"
 
 const service = new UserService()
 
-// login() and register() both mint a token for a freshly-looked-up-or-created user.
+// login() and loginWithGoogle() both mint a token for a freshly-looked-up-or-created user.
 function buildAuthResponse(user: User) {
   const { id, name, email, role, cooperativeId } = user
   return {
@@ -21,35 +22,33 @@ export class UserController {
   async login(request: FastifyRequest<{ Body: LoginInput }>, reply: FastifyReply) {
     const { email, password } = request.body
     const user = await service.findByEmail(email)
-    if (!user || !user.active || !(await verifyPassword(user.password, password))) {
+    // Only cooperative accounts have a password; a citizen's never matches here.
+    if (!user || !user.active || !user.password || !(await verifyPassword(user.password, password))) {
       return reply.status(401).send({ message: "Invalid credentials" })
     }
     return reply.send(buildAuthResponse(user))
   }
 
-  // Public citizen self-registration. Deliberately never reads role/cooperativeId
-  // from the request body — every account created here is role "user" with no
-  // cooperative, which is what keeps citizens out of the dashboard (see
+  // Citizen sign-in, and sign-up on the first one: there's no other way to
+  // create a citizen account. Every account created here is role "user" with
+  // no cooperative, which is what keeps citizens out of the dashboard (see
   // frontend/app/dashboard/layout.tsx's role gate).
-  async register(request: FastifyRequest<{ Body: RegisterInput }>, reply: FastifyReply) {
-    const { name, email, password, address, lat, lng, addressNumber, addressStreetId, addressSide } = request.body
+  async loginWithGoogle(request: FastifyRequest<{ Body: GoogleLoginInput }>, reply: FastifyReply) {
+    if (!isGoogleSignInConfigured()) {
+      return reply.status(503).send({ message: "Google sign-in is not configured (GOOGLE_CLIENT_ID)" })
+    }
 
-    if (await service.findByEmail(email)) return reply.status(409).send({ message: "E-mail já cadastrado" })
+    let identity: GoogleIdentity
+    try {
+      identity = await verifyGoogleIdToken(request.body.credential)
+    } catch {
+      return reply.status(401).send({ message: "Invalid Google credential" })
+    }
 
-    const user = await service.create({
-      name,
-      email,
-      password,
-      role: "user",
-      address,
-      addressLat: lat,
-      addressLng: lng,
-      addressNumber,
-      addressStreetId,
-      addressSide,
-    })
-
-    return reply.status(201).send(buildAuthResponse(user))
+    const user = await service.findOrCreateGoogleUser(identity)
+    if (!user) return reply.status(409).send({ message: "E-mail já usado por outra conta" })
+    if (!user.active) return reply.status(403).send({ message: "Conta desativada" })
+    return reply.send(buildAuthResponse(user))
   }
 
   async me(request: FastifyRequest, reply: FastifyReply) {
@@ -59,16 +58,15 @@ export class UserController {
     return reply.send(user)
   }
 
-  // A citizen editing their own profile. Same principle as register(): role
-  // and cooperativeId are never accepted here, so this endpoint can never be
-  // used to self-promote.
+  // A citizen editing their own profile. Same principle as loginWithGoogle():
+  // role and cooperativeId are never accepted here, so this endpoint can never
+  // be used to self-promote.
   async updateMe(request: FastifyRequest<{ Body: UpdateProfileInput }>, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
-    const { name, password, address, lat, lng, addressNumber, addressStreetId, addressSide } = request.body
+    const { name, address, lat, lng, addressNumber, addressStreetId, addressSide } = request.body
 
     const updated = await service.update(currentUser.userId, {
       name,
-      password,
       address,
       addressLat: lat,
       addressLng: lng,

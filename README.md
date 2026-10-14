@@ -40,9 +40,9 @@ pnpm dev
 
 A API sobe em `http://localhost:3001` e a documentação (Swagger) fica em `http://localhost:3001/admin/docs`.
 
-Os usuários do seed usam a senha `password` (ex.: `admin@coopcamate.com`, `admin@renascer.com`, `user@example.com`).
+Os admins de cooperativa do seed usam a senha `password` (ex.: `admin@coopcamate.com`, `admin@renascer.com`). O seed não cria munícipes: eles entram com a conta Google (veja [Login dos munícipes com Google](#login-dos-munícipes-com-google)).
 
-As variáveis do backend estão comentadas em `backend/.env.example` — só `DATABASE_URL` e `JWT_SECRET` são obrigatórias; a integração de GPS (Multiportal) e as notificações (Web Push) ficam desligadas sem as delas.
+As variáveis do backend estão comentadas em `backend/.env.example` — só `DATABASE_URL` e `JWT_SECRET` são obrigatórias; o login de munícipes (Google), a integração de GPS (Multiportal) e as notificações (Web Push) ficam desligados sem as delas.
 
 ### 3. Frontend
 
@@ -56,6 +56,19 @@ npm run dev
 ```
 
 O frontend sobe em `http://localhost:3000`.
+
+## Login dos munícipes com Google
+
+Munícipe não cria senha: entra com a conta Google pelo botão "Continuar com o Google" em `/login` (Google Identity Services, gratuito). A conta é criada no primeiro login, com o nome e o e-mail do Google; o endereço ele cadastra depois, no Perfil. As cooperativas continuam entrando com e-mail e senha, numa página só delas: `/admin/login` (não há link para ela no site — quem é de cooperativa digita o endereço).
+
+Para ligar, crie um OAuth client ID no [Google Cloud Console](https://console.cloud.google.com/):
+
+1. Crie (ou escolha) um projeto e abra **Google Auth Platform** (antiga "Tela de consentimento OAuth"). Configure o app como **Externo**, com nome e e-mail de suporte. Não adicione escopos: o login só usa os básicos (`openid`, `email`, `profile`), que não exigem verificação do Google.
+2. Em **Clientes**, crie um client do tipo **Aplicativo da Web**. Em **Origens JavaScript autorizadas** coloque `http://localhost:3000` **e** `http://localhost` (o Google exige os dois em desenvolvimento), mais o endereço de produção (`https://...`). Não precisa de URI de redirecionamento nem do client secret.
+3. Copie o **Client ID** (`....apps.googleusercontent.com`) para `GOOGLE_CLIENT_ID` em `backend/.env` e para `NEXT_PUBLIC_GOOGLE_CLIENT_ID` em `frontend/.env.local`. O mesmo valor nos dois: o backend só aceita tokens emitidos para esse client. Variáveis `NEXT_PUBLIC_` entram no build do frontend, então rebuilde depois de mudar.
+4. Enquanto o app estiver em **Teste** (em **Público-alvo**), só entram as contas cadastradas como usuários de teste. Para qualquer munícipe entrar, clique em **Publicar app** ("Em produção").
+
+O botão manda o ID token do Google para `POST /login/google`, que confere assinatura, emissor, validade, se o token foi emitido para o nosso client ID e se o e-mail é verificado, e devolve o mesmo JWT do login por senha. O munícipe é identificado pelo `sub` da conta Google (`users.google_sub`), não pelo e-mail.
 
 ## Cooperativas e seus administradores
 
@@ -78,7 +91,7 @@ VALUES ('Fulana', 'fulana@cooperativa.com', '<hash gerado acima>', 'cooperative_
         (SELECT id FROM cooperatives WHERE name = 'Nova Cooperativa'));
 ```
 
-O e-mail precisa estar em minúsculas. Para desativar uma cooperativa (some dos mapas e das listas): `UPDATE cooperatives SET active = false WHERE ...`; para bloquear uma conta: `UPDATE users SET active = false WHERE ...`. Endereço, telefone e o pin no mapa a própria cooperativa edita em "Minha Cooperativa".
+O e-mail precisa estar em minúsculas. Só contas de cooperativa têm senha; uma conta de munícipe (`role = 'user'`) nunca tem, e uma de cooperativa não pode entrar pelo Google (o banco garante as duas coisas). Se o e-mail de um admin for uma conta Google, esse e-mail não consegue virar munícipe. Para desativar uma cooperativa (some dos mapas e das listas): `UPDATE cooperatives SET active = false WHERE ...`; para bloquear uma conta: `UPDATE users SET active = false WHERE ...`. Endereço, telefone e o pin no mapa a própria cooperativa edita em "Minha Cooperativa".
 
 ## Mudando a API
 

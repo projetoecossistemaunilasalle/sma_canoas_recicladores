@@ -6,7 +6,7 @@ import AddressPinMap from "./address-pin-map-client";
 import type { AddressPinState } from "@/lib/use-address-pin";
 
 /**
- * Register/profile address field: street search, "tap your house" map, side
+ * Profile address field: street search, "tap your house" map, side
  * confirmation and the (optional) house number. State lives in the parent's
  * useAddressPin() so the form can read `state.value` on submit.
  */

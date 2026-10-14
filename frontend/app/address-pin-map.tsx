@@ -34,7 +34,7 @@ function PickHandler({ onPick }: { onPick: (lat: number, lng: number) => void })
   return null;
 }
 
-/** The small "tap on your house" map used inside the register/profile and cooperative forms. */
+/** The small "tap on your house" map used inside the profile and cooperative forms. */
 export function AddressPinMap({ focus, pin, streetLine, side, onPick }: AddressPinMapProps) {
   return (
     <BaseMap

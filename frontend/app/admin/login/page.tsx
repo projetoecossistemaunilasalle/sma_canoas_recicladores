@@ -1,7 +1,7 @@
 import { redirectIfAuthenticated } from "@/lib/auth";
-import { RegisterForm } from "./register-form";
+import { LoginForm } from "./login-form";
 
-export default async function RegisterPage() {
+export default async function AdminLoginPage() {
   await redirectIfAuthenticated();
 
   return (
@@ -16,12 +16,13 @@ export default async function RegisterPage() {
               Canoas Recicla com a Gente
             </span>
           </div>
-          <h1 className="text-headline-lg text-on-surface mb-2">Criar conta</h1>
+          <h1 className="text-headline-lg text-on-surface mb-2">Área da Cooperativa</h1>
           <p className="text-body-md text-on-surface-variant">
-            Acompanhe a coleta na sua rua e receba avisos quando o caminhão estiver perto.
+            Entre com sua conta para acessar o painel de gestão.
           </p>
         </div>
-        <RegisterForm />
+
+        <LoginForm />
       </div>
     </main>
   );

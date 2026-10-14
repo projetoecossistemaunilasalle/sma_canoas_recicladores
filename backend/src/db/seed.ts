@@ -108,16 +108,7 @@ async function seed() {
       })
       .onConflictDoNothing({ target: users.email })
   }
-
-  await db
-    .insert(users)
-    .values({
-      name: "User",
-      email: "user@example.com",
-      password: await hashPassword("password"),
-      role: "user",
-    })
-    .onConflictDoNothing({ target: users.email })
+  // No seeded citizen: citizens only exist once they sign in with Google.
 
   // ============================================
   // 3. VEHICLES
@@ -200,7 +191,7 @@ async function seed() {
 
   console.log("✅ Seed completed successfully!")
   console.log(`   - ${coopNames.length} cooperatives`)
-  console.log(`   - ${admins.length + 1} users`)
+  console.log(`   - ${admins.length} users`)
   console.log(`   - ${vehicleData.length} vehicles`)
   console.log(`   - ${positions.length} positions`)
   process.exit(0)

@@ -59,7 +59,7 @@ export async function saveRouteAction(
   formData: FormData
 ): Promise<SaveRouteState> {
   const token = await getToken();
-  if (!token) redirect("/login");
+  if (!token) redirect("/admin/login");
 
   const vehicleId = String(formData.get("vehicleId") ?? "");
   const shift = String(formData.get("shift") ?? "") as Shift;
@@ -86,7 +86,7 @@ export async function saveRouteAction(
 
 export async function deleteRouteAction(routeId: string) {
   const token = await getToken();
-  if (!token) redirect("/login");
+  if (!token) redirect("/admin/login");
   await deleteRoute(token, routeId);
   revalidatePath("/dashboard/routes");
 }

@@ -4,7 +4,7 @@ import { RouteBuilder } from "./route-builder";
 import { PageHeader } from "../../page-header";
 
 export default async function NewRoutePage() {
-  const { token } = await requireUser();
+  const { token } = await requireUser("/admin/login");
 
   const vehicles = await getVehicles(token);
 

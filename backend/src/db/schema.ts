@@ -57,7 +57,10 @@ export const users = pgTable("users", {
   name: text("name").notNull(),
   // Always lowercase (the API normalizes; the DB has a CHECK).
   email: text("email").unique().notNull(),
-  password: text("password").notNull(),
+  // A cooperative_admin signs in with a password (argon2id hash); a citizen
+  // only with their Google account, matched by its stable `sub` (CHECK).
+  password: text("password"),
+  googleSub: text("google_sub").unique(),
   // "user" (citizen) or "cooperative_admin" — no global admin; a
   // cooperative_admin always has a cooperativeId and a citizen never does (CHECKs).
   role: text("role").$type<Role>().notNull().default("user"),

@@ -31,7 +31,7 @@ export async function createVehicleAction(
   formData: FormData
 ): Promise<VehicleFormState> {
   const token = await getToken();
-  if (!token) redirect("/login");
+  if (!token) redirect("/admin/login");
 
   try {
     await createVehicle(token, readVehicleForm(formData));
@@ -50,7 +50,7 @@ export async function updateVehicleAction(
   formData: FormData
 ): Promise<VehicleFormState> {
   const token = await getToken();
-  if (!token) redirect("/login");
+  if (!token) redirect("/admin/login");
 
   try {
     await updateVehicle(token, vehicleId, readVehicleForm(formData));
@@ -65,7 +65,7 @@ export async function updateVehicleAction(
 
 export async function deleteVehicleAction(vehicleId: string) {
   const token = await getToken();
-  if (!token) redirect("/login");
+  if (!token) redirect("/admin/login");
 
   try {
     await deleteVehicle(token, vehicleId);
@@ -104,7 +104,7 @@ export async function vehicleLoanAction(
   formData: FormData
 ): Promise<LoanFormState> {
   const token = await getToken();
-  if (!token) redirect("/login");
+  if (!token) redirect("/admin/login");
 
   const cooperativeId = lend ? String(formData.get("cooperativeId") ?? "").trim() : null;
   const confirmUnlink = formData.get("confirmUnlink") === "true";

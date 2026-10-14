@@ -7,7 +7,7 @@ import { PageHeader, EmptyListCard } from "../page-header";
 import { RowActions } from "../row-actions";
 
 export default async function RoutesListPage() {
-  const { token } = await requireUser();
+  const { token } = await requireUser("/admin/login");
 
   const [routes, vehicles] = await Promise.all([getRoutes(token), getVehicles(token)]);
   const vehicleById = new Map(vehicles.map((v) => [v.id, v]));

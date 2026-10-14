@@ -9,7 +9,6 @@ import type { CitizenAddress, CurrentUser } from "@/lib/types";
 
 export function ProfileForm({ user, initialAddress }: { user: CurrentUser; initialAddress: CitizenAddress | null }) {
   const [name, setName] = useState(user.name);
-  const [password, setPassword] = useState("");
   const addressPin = useAddressPin(initialAddress);
   const notify = useProximityNotifications(user.notifyProximity);
   const [status, setStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
@@ -26,7 +25,6 @@ export function ProfileForm({ user, initialAddress }: { user: CurrentUser; initi
     startTransition(async () => {
       const { result, error } = await updateProfileAction({
         name,
-        password: password || undefined,
         ...(address
           ? {
               address: address.label,
@@ -42,7 +40,6 @@ export function ProfileForm({ user, initialAddress }: { user: CurrentUser; initi
         setStatus({ type: "error", message: error });
       } else if (result) {
         setStatus({ type: "success", message: "Perfil atualizado." });
-        setPassword("");
       }
     });
   }
@@ -65,21 +62,6 @@ export function ProfileForm({ user, initialAddress }: { user: CurrentUser; initi
         <div>
           <p className="text-label-lg text-on-surface-variant mb-1">Endereço da coleta</p>
           <AddressPicker state={addressPin} />
-        </div>
-
-        <div>
-          <label className="text-label-lg text-on-surface-variant mb-1 block" htmlFor="profile-password">
-            Nova senha (opcional)
-          </label>
-          <input
-            id="profile-password"
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Deixe em branco pra manter a atual"
-            minLength={6}
-            className="w-full bg-surface-container-lowest text-on-surface text-body-md rounded-xl px-4 py-3 outline-none border-2 border-transparent focus:border-primary placeholder:text-on-surface-variant/50"
-          />
         </div>
 
         {status ? (

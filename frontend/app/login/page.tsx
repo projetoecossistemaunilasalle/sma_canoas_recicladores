@@ -1,5 +1,5 @@
 import { redirectIfAuthenticated } from "@/lib/auth";
-import { LoginForm } from "./login-form";
+import { GoogleSignIn } from "./google-sign-in";
 
 export default async function LoginPage() {
   await redirectIfAuthenticated();
@@ -16,14 +16,16 @@ export default async function LoginPage() {
               Canoas Recicla com a Gente
             </span>
           </div>
-          <h1 className="text-headline-lg text-on-surface mb-2">
-            Área da Cooperativa
-          </h1>
+          <h1 className="text-headline-lg text-on-surface mb-2">Entrar</h1>
           <p className="text-body-md text-on-surface-variant">
-            Entre com sua conta para acessar o painel.
+            Acompanhe a coleta na sua rua e receba avisos quando o caminhão estiver perto.
           </p>
         </div>
-        <LoginForm />
+
+        <GoogleSignIn />
+        <p className="text-body-md text-on-surface-variant text-center mt-3">
+          Use sua conta Google, sem criar senha. No primeiro acesso sua conta é criada na hora.
+        </p>
       </div>
     </main>
   );

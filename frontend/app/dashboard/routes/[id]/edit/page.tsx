@@ -11,7 +11,7 @@ export default async function EditRoutePage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const { token } = await requireUser();
+  const { token } = await requireUser("/admin/login");
 
   let route;
   try {

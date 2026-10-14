@@ -290,7 +290,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/register": {
+    "/login/google": {
         parameters: {
             query?: never;
             header?: never;
@@ -299,7 +299,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Public citizen self-registration */
+        /** Citizen sign-in with a Google ID token (creates the account on the first one) */
         post: {
             parameters: {
                 query?: never;
@@ -310,23 +310,13 @@ export interface paths {
             requestBody: {
                 content: {
                     "application/json": {
-                        name: string;
-                        /** Format: email */
-                        email: string;
-                        password: string;
-                        address?: string;
-                        lat?: number;
-                        lng?: number;
-                        addressNumber?: string | null;
-                        addressStreetId?: number;
-                        /** @enum {string} */
-                        addressSide?: "left" | "right";
+                        credential: string;
                     };
                 };
             };
             responses: {
                 /** @description Default Response */
-                201: {
+                200: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -347,7 +337,40 @@ export interface paths {
                     };
                 };
                 /** @description Default Response */
+                401: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                403: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
                 409: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "application/json": {
+                            message: string;
+                        };
+                    };
+                };
+                /** @description Default Response */
+                503: {
                     headers: {
                         [name: string]: unknown;
                     };
@@ -433,7 +456,6 @@ export interface paths {
                 content: {
                     "application/json": {
                         name?: string;
-                        password?: string;
                         address?: string;
                         lat?: number;
                         lng?: number;

@@ -13,7 +13,6 @@ type ApiBody<P extends keyof paths, M extends keyof paths[P]> =
 
 export type CurrentUser = ApiResponse<"/me", "get">;
 export type UpdateProfileInput = ApiBody<"/me", "put">;
-export type RegisterInput = ApiBody<"/register", "post">;
 export type AuthResponse = ApiResponse<"/login", "post">;
 export type PushSubscriptionInput = ApiBody<"/me/push-subscription", "post">;
 

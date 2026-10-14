@@ -5,7 +5,7 @@ import {
   userSchema,
   loginSchema,
   authResponseSchema,
-  registerSchema,
+  googleLoginSchema,
   updateProfileSchema,
   pushSubscriptionSchema,
 } from "./user.schema"
@@ -29,16 +29,22 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
   )
 
   server.post(
-    "/register",
+    "/login/google",
     {
       schema: {
-        summary: "Public citizen self-registration",
+        summary: "Citizen sign-in with a Google ID token (creates the account on the first one)",
         tags: ["Auth"],
-        body: registerSchema,
-        response: { 201: authResponseSchema, 409: errorResponseSchema },
+        body: googleLoginSchema,
+        response: {
+          200: authResponseSchema,
+          401: errorResponseSchema,
+          403: errorResponseSchema,
+          409: errorResponseSchema,
+          503: errorResponseSchema,
+        },
       },
     },
-    controller.register.bind(controller)
+    controller.loginWithGoogle.bind(controller)
   )
 
   server.get(

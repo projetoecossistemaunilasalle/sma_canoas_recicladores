@@ -1,5 +1,5 @@
 import { requireUser } from "@/lib/auth";
-import { logout } from "@/app/login/actions";
+import { logout, logoutCooperative } from "@/app/login/actions";
 import { DashboardNav, DashboardMobileNav } from "./dashboard-nav";
 
 export default async function DashboardLayout({
@@ -7,7 +7,7 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user } = await requireUser();
+  const { user } = await requireUser("/admin/login");
 
   if (user.role !== "cooperative_admin") {
     return (
@@ -64,7 +64,7 @@ export default async function DashboardLayout({
               </p>
             </div>
           </div>
-          <form action={logout}>
+          <form action={logoutCooperative}>
             <button
               className="p-2 text-on-surface-variant hover:text-error hover:bg-error-container rounded-full transition-colors shrink-0"
               type="submit"

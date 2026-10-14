@@ -24,32 +24,24 @@ export const userSchema = z.object({
   notifyProximity: z.boolean(),
 })
 
-// The citizen's address as set in register/profile: lat/lng is the pin they
+// The citizen's address as set in their profile: lat/lng is the pin they
 // put on their house, addressStreetId/addressSide what they confirmed for it
 // (see /public/address-street). The pin is useless for collection checks
 // without the other two, so the four go together or not at all.
-const citizenAddressFields = {
-  address: z.string().optional(),
-  lat: z.number().optional(),
-  lng: z.number().optional(),
-  addressNumber: z.string().trim().max(20).nullable().optional(),
-  addressStreetId: z.number().int().optional(),
-  addressSide: houseSideSchema.optional(),
-}
-
 function isAddressComplete(v: { lat?: number; lng?: number; addressStreetId?: number; addressSide?: string }) {
   const parts = [v.lat, v.lng, v.addressStreetId, v.addressSide]
   return parts.every((p) => p === undefined) || parts.every((p) => p !== undefined)
 }
 
-const incompleteAddressError = {
-  message: "lat, lng, addressStreetId and addressSide must be sent together",
-  path: ["addressSide"],
-}
-
+// Cooperative staff only — citizens have no password, they sign in with Google.
 export const loginSchema = z.object({
   email: emailSchema,
   password: z.string().min(1),
+})
+
+// The ID token the "Sign in with Google" button hands the page (its `credential`).
+export const googleLoginSchema = z.object({
+  credential: z.string().min(1),
 })
 
 export const authResponseSchema = z.object({
@@ -63,29 +55,25 @@ export const authResponseSchema = z.object({
   }),
 })
 
-// Public citizen self-registration — deliberately has no role/cooperativeId
+// A citizen editing their own profile — deliberately has no role/cooperativeId
 // field at all, so there's nothing for a client to even attempt to escalate.
-export const registerSchema = z
-  .object({
-    name: z.string().min(1),
-    email: emailSchema,
-    password: z.string().min(6),
-    ...citizenAddressFields,
-  })
-  .refine(isAddressComplete, incompleteAddressError)
-
-// A citizen editing their own profile — same no-role/no-cooperativeId
-// principle as registerSchema.
 export const updateProfileSchema = z
   .object({
     name: z.string().min(1).optional(),
-    password: z.string().min(6).optional(),
-    ...citizenAddressFields,
+    address: z.string().optional(),
+    lat: z.number().optional(),
+    lng: z.number().optional(),
+    addressNumber: z.string().trim().max(20).nullable().optional(),
+    addressStreetId: z.number().int().optional(),
+    addressSide: houseSideSchema.optional(),
   })
-  .refine(isAddressComplete, incompleteAddressError)
+  .refine(isAddressComplete, {
+    message: "lat, lng, addressStreetId and addressSide must be sent together",
+    path: ["addressSide"],
+  })
 
 export type LoginInput = z.infer<typeof loginSchema>
-export type RegisterInput = z.infer<typeof registerSchema>
+export type GoogleLoginInput = z.infer<typeof googleLoginSchema>
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>
 
 export const pushSubscriptionSchema = z.object({

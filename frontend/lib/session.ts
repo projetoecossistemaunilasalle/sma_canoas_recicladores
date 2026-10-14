@@ -6,7 +6,7 @@ export async function getToken(): Promise<string | null> {
   return store.get(SESSION_COOKIE)?.value ?? null;
 }
 
-/** The backend's JWT, kept httpOnly — set on login and on registration. */
+/** The backend's JWT, kept httpOnly — set on login (password or Google). */
 export async function setSessionCookie(token: string) {
   const store = await cookies();
   store.set(SESSION_COOKIE, token, {

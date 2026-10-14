@@ -4,8 +4,8 @@ import type { AddressPinState } from "@/lib/use-address-pin";
 
 /**
  * The text + buttons under/over the map that walk the citizen from "street
- * searched" to "house pinned, side confirmed". Shared by the register and
- * profile forms (AddressPicker) and the public home's big map.
+ * searched" to "house pinned, side confirmed". Shared by the profile
+ * form (AddressPicker) and the public home's big map.
  */
 export function AddressSideControls({ state }: { state: AddressPinState }) {
   const { search, pin, street, side, resolving, error, flipSide } = state;

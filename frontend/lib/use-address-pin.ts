@@ -5,7 +5,7 @@ import { resolveAddressStreet } from "./public-api";
 import type { AddressStreet, CitizenAddress, GeocodeResult, HouseSide, LatLng } from "./types";
 
 /**
- * The citizen address flow shared by register, profile and the public home:
+ * The citizen address flow shared by the profile and the public home:
  * search the street → tap the house on the map → confirm (or flip) which
  * side of the street it's on → optional house number. `value` is only set
  * once all of pin, segment and side are known — collection checks need all three.

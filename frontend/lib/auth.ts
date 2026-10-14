@@ -25,12 +25,12 @@ export const getCurrentUser = cache(
  * is cache()'d, so calling this from both a layout and its page in the same
  * request doesn't cost an extra round-trip.
  */
-export async function requireUser(): Promise<{ token: string; user: CurrentUser }> {
+export async function requireUser(loginPath = "/login"): Promise<{ token: string; user: CurrentUser }> {
   const token = await getToken();
-  if (!token) redirect("/login");
+  if (!token) redirect(loginPath);
 
   const user = await getCurrentUser(token);
-  if (!user) redirect("/login");
+  if (!user) redirect(loginPath);
 
   return { token, user };
 }
@@ -42,12 +42,12 @@ export async function requireUser(): Promise<{ token: string; user: CurrentUser 
  * the page a non-null cooperativeId.
  */
 export async function requireCooperativeAdmin(): Promise<{ token: string; user: CurrentUser; cooperativeId: string }> {
-  const { token, user } = await requireUser();
+  const { token, user } = await requireUser("/admin/login");
   if (user.role !== "cooperative_admin" || !user.cooperativeId) redirect("/citizen");
   return { token, user, cooperativeId: user.cooperativeId };
 }
 
-/** The inverse guard used by the public entry pages (/, /login, /register): send an already-signed-in visitor straight to their area instead of showing the page. */
+/** The inverse guard used by the public entry pages (/, /login): send an already-signed-in visitor straight to their area instead of showing the page. */
 export async function redirectIfAuthenticated(): Promise<void> {
   const token = await getToken();
   if (!token) return;
