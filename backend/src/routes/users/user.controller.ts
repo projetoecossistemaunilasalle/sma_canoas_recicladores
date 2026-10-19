@@ -1,17 +1,21 @@
+
 import type { FastifyReply, FastifyRequest } from "fastify"
 import type { z } from "zod"
+import { OAuth2Client } from "google-auth-library"
 import { UserService } from "./user.service"
 import { verifyPassword } from "../../lib/password"
 import { signToken } from "../../lib/jwt"
 import type { JwtPayload } from "../../lib/jwt"
-import { getCooperativeFilter, scopeCooperativeId } from "../../middleware/auth.middleware"
+import {
+  getCooperativeFilter,
+  scopeCooperativeId,
+} from "../../middleware/auth.middleware"
 import type { User } from "../../db/schema"
 import type { createUserSchema, updateUserSchema } from "./user.schema"
 
 const service = new UserService()
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
-// login() and register() both mint a token for a freshly-looked-up-or-created
-// user and shape the same 7-field response around it.
 function buildAuthResponse(user: User) {
   const token = signToken({
     userId: user.id,
@@ -19,6 +23,7 @@ function buildAuthResponse(user: User) {
     role: user.role,
     cooperativeId: user.cooperativeId,
   })
+
   return {
     token,
     user: {
@@ -34,83 +39,233 @@ function buildAuthResponse(user: User) {
 }
 
 export class UserController {
-  async login(request: FastifyRequest<{ Body: { email: string; password: string } }>, reply: FastifyReply) {
+  async login(
+    request: FastifyRequest<{
+      Body: { email: string; password: string }
+    }>,
+    reply: FastifyReply
+  ) {
     const { email, password } = request.body
     const user = await service.findByEmail(email)
+
     if (!user || !user.active) {
-      return reply.status(401).send({ message: "Invalid credentials" })
+      return reply.status(401).send({
+        message: "Invalid credentials",
+      })
     }
 
     const valid = await verifyPassword(user.password, password)
+
     if (!valid) {
-      return reply.status(401).send({ message: "Invalid credentials" })
+      return reply.status(401).send({
+        message: "Invalid credentials",
+      })
     }
 
     return reply.send(buildAuthResponse(user))
   }
 
+  async loginWithGoogle(
+    request: FastifyRequest<{
+      Body: { idToken: string }
+    }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const clientId = process.env.GOOGLE_CLIENT_ID
+
+      if (!clientId) {
+        request.log.error("GOOGLE_CLIENT_ID não configurado")
+
+        return reply.status(500).send({
+          message: "Autenticação Google não configurada",
+        })
+      }
+
+      const ticket = await googleClient.verifyIdToken({
+        idToken: request.body.idToken,
+        audience: clientId,
+      })
+
+      const payload = ticket.getPayload()
+
+      if (
+        !payload?.sub ||
+        !payload.email ||
+        payload.email_verified !== true
+      ) {
+        return reply.status(401).send({
+          message: "Conta Google inválida ou e-mail não verificado",
+        })
+      }
+
+      const user = await service.findByEmail(payload.email)
+
+      if (user) {
+        if (!user.active) {
+          return reply.status(401).send({
+            message: "Esta conta está desativada",
+          })
+        }
+
+        // Não vincula automaticamente uma conta existente.
+        return reply.status(409).send({
+          message: "Este e-mail já possui cadastro. Entre com sua senha.",
+        })
+      }
+
+      const newUser = await service.create({
+        name: payload.name?.trim() || payload.email,
+        email: payload.email,
+        password: `Google-${crypto.randomUUID()}-${crypto.randomUUID()}`,
+        role: "user",
+        cooperativeId: undefined,
+      })
+
+      return reply.send(buildAuthResponse(newUser))
+    } catch (error) {
+      request.log.warn(
+        { err: error },
+        "Falha na autenticação Google"
+      )
+
+      return reply.status(401).send({
+        message: "Não foi possível validar a conta Google",
+      })
+    }
+  }
+
   async list(request: FastifyRequest, reply: FastifyReply) {
     const filter = getCooperativeFilter(request)
     const list = await service.findAll(filter)
+
     return reply.send(list)
   }
 
-  async getById(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  async getById(
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) {
     const filter = getCooperativeFilter(request)
     const user = await service.findById(request.params.id, filter)
-    if (!user) return reply.status(404).send({ message: "User not found" })
+
+    if (!user) {
+      return reply.status(404).send({
+        message: "User not found",
+      })
+    }
+
     return reply.send(user)
   }
 
-  async create(request: FastifyRequest<{ Body: z.infer<typeof createUserSchema> }>, reply: FastifyReply) {
+  async create(
+    request: FastifyRequest<{
+      Body: z.infer<typeof createUserSchema>
+    }>,
+    reply: FastifyReply
+  ) {
     const currentUser = request.user as JwtPayload
-    const cooperativeId = scopeCooperativeId(currentUser, request.body.cooperativeId)
-    const user = await service.create({ ...request.body, cooperativeId })
+    const cooperativeId = scopeCooperativeId(
+      currentUser,
+      request.body.cooperativeId
+    )
+
+    const user = await service.create({
+      ...request.body,
+      cooperativeId,
+    })
+
     return reply.status(201).send(user)
   }
 
-  async update(request: FastifyRequest<{ Params: { id: string }; Body: z.infer<typeof updateUserSchema> }>, reply: FastifyReply) {
+  async update(
+    request: FastifyRequest<{
+      Params: { id: string }
+      Body: z.infer<typeof updateUserSchema>
+    }>,
+    reply: FastifyReply
+  ) {
     const currentUser = request.user as JwtPayload
     const filter = getCooperativeFilter(request)
 
     if (currentUser.role === "cooperative_admin" && request.body.role) {
       delete request.body.role
     }
-    if (currentUser.role === "cooperative_admin" && request.body.cooperativeId) {
+
+    if (
+      currentUser.role === "cooperative_admin" &&
+      request.body.cooperativeId
+    ) {
       delete request.body.cooperativeId
     }
 
-    const user = await service.update(request.params.id, request.body, filter)
-    if (!user) return reply.status(404).send({ message: "User not found" })
+    const user = await service.update(
+      request.params.id,
+      request.body,
+      filter
+    )
+
+    if (!user) {
+      return reply.status(404).send({
+        message: "User not found",
+      })
+    }
+
     return reply.send(user)
   }
 
-  async remove(request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) {
+  async remove(
+    request: FastifyRequest<{ Params: { id: string } }>,
+    reply: FastifyReply
+  ) {
     const filter = getCooperativeFilter(request)
     const user = await service.delete(request.params.id, filter)
-    if (!user) return reply.status(404).send({ message: "User not found" })
+
+    if (!user) {
+      return reply.status(404).send({
+        message: "User not found",
+      })
+    }
+
     return reply.status(204).send()
   }
 
   async me(request: FastifyRequest, reply: FastifyReply) {
     const currentUser = request.user as JwtPayload
     const user = await service.findById(currentUser.userId)
-    if (!user) return reply.status(404).send({ message: "User not found" })
+
+    if (!user) {
+      return reply.status(404).send({
+        message: "User not found",
+      })
+    }
+
     return reply.send(user)
   }
 
-  // Public citizen self-registration. Deliberately never reads role/cooperativeId
-  // from the request body — every account created here is role "user" with no
-  // cooperative, which is what keeps citizens out of the dashboard (see
-  // frontend/app/dashboard/layout.tsx's role gate).
+  // Cadastro público de cidadãos: nunca aceita role ou cooperativeId.
   async register(
-    request: FastifyRequest<{ Body: { name: string; email: string; password: string; address?: string; lat?: number; lng?: number } }>,
+    request: FastifyRequest<{
+      Body: {
+        name: string
+        email: string
+        password: string
+        address?: string
+        lat?: number
+        lng?: number
+      }
+    }>,
     reply: FastifyReply
   ) {
     const { name, email, password, address, lat, lng } = request.body
 
     const existing = await service.findByEmail(email)
-    if (existing) return reply.status(409).send({ message: "E-mail já cadastrado" })
+
+    if (existing) {
+      return reply.status(409).send({
+        message: "E-mail já cadastrado",
+      })
+    }
 
     const user = await service.create({
       name,
@@ -126,15 +281,23 @@ export class UserController {
     return reply.status(201).send(buildAuthResponse(user))
   }
 
-  // A citizen editing their own profile. Same principle as register(): role
-  // and cooperativeId are never accepted here, so this endpoint can never be
-  // used to self-promote.
+  // O cidadão só pode editar os próprios dados, sem alterar o perfil de acesso.
   async updateMe(
-    request: FastifyRequest<{ Body: { name?: string; password?: string; address?: string; lat?: number; lng?: number; notifyProximity?: boolean } }>,
+    request: FastifyRequest<{
+      Body: {
+        name?: string
+        password?: string
+        address?: string
+        lat?: number
+        lng?: number
+        notifyProximity?: boolean
+      }
+    }>,
     reply: FastifyReply
   ) {
     const currentUser = request.user as JwtPayload
-    const { name, password, address, lat, lng, notifyProximity } = request.body
+    const { name, password, address, lat, lng, notifyProximity } =
+      request.body
 
     const user = await service.update(currentUser.userId, {
       name,
@@ -144,26 +307,54 @@ export class UserController {
       addressLng: lng,
       notifyProximity,
     })
-    if (!user) return reply.status(404).send({ message: "User not found" })
+
+    if (!user) {
+      return reply.status(404).send({
+        message: "User not found",
+      })
+    }
+
     return reply.send(user)
   }
 
   async savePushSubscription(
-    request: FastifyRequest<{ Body: { endpoint: string; keys: { p256dh: string; auth: string } } }>,
+    request: FastifyRequest<{
+      Body: {
+        endpoint: string
+        keys: {
+          p256dh: string
+          auth: string
+        }
+      }
+    }>,
     reply: FastifyReply
   ) {
     const currentUser = request.user as JwtPayload
     const { endpoint, keys } = request.body
-    await service.savePushSubscription({ userId: currentUser.userId, endpoint, p256dh: keys.p256dh, auth: keys.auth })
+
+    await service.savePushSubscription({
+      userId: currentUser.userId,
+      endpoint,
+      p256dh: keys.p256dh,
+      auth: keys.auth,
+    })
+
     return reply.status(204).send()
   }
 
   async deletePushSubscription(
-    request: FastifyRequest<{ Body: { endpoint: string } }>,
+    request: FastifyRequest<{
+      Body: { endpoint: string }
+    }>,
     reply: FastifyReply
   ) {
     const currentUser = request.user as JwtPayload
-    await service.deletePushSubscription(currentUser.userId, request.body.endpoint)
+
+    await service.deletePushSubscription(
+      currentUser.userId,
+      request.body.endpoint
+    )
+
     return reply.status(204).send()
   }
 }

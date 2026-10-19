@@ -1,11 +1,13 @@
+
 import type { FastifyPluginAsyncZod } from "fastify-type-provider-zod"
 import { z } from "zod"
 import { UserController } from "./user.controller"
 import {
-  createUserSchema,
+ createUserSchema,
   updateUserSchema,
   userSchema,
   loginSchema,
+  googleLoginSchema,
   loginResponseSchema,
   registerSchema,
   updateProfileSchema,
@@ -26,8 +28,29 @@ export const userRoutes: FastifyPluginAsyncZod = async (server) => {
         body: loginSchema,
         response: { 200: loginResponseSchema, 401: errorResponseSchema },
       },
+      
     },
+
     controller.login.bind(controller)
+  )
+
+  // Login com Google
+  
+  server.post(
+    "/google",
+    {
+      schema: {
+        summary: "Login with Google",
+        tags: ["Auth"],
+        body: googleLoginSchema,
+        response: {
+          200: loginResponseSchema,
+          401: errorResponseSchema,
+          409: errorResponseSchema,
+        },
+      },
+    },
+    controller.loginWithGoogle.bind(controller)
   )
 
   server.post(

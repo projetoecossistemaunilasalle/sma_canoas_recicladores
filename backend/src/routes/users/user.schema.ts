@@ -39,6 +39,12 @@ export const loginSchema = z.object({
   password: z.string().min(1),
 })
 
+
+export const googleLoginSchema = z.object({
+  idToken: z.string().min(1),
+})
+
+
 export const loginResponseSchema = z.object({
   token: z.string(),
   user: userSchema.omit({ createdAt: true, updatedAt: true }),

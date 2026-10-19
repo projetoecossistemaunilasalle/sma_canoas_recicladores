@@ -59,21 +59,21 @@ const CONTENTS: Record<
         ],
         image: "/educacao/plastico/plastico2.jpg",
       },
-      //{
-      //  title: "PVC",
-       // paragraphs: [
-     //     "Materiais de PVC, como canos e forros também podem ser reciclados. Confirmar com as cooperativas.",
-       // ],
-       // image: "/educacao/plastico/plastico3.png",
-     // },
-      //{//
-      //  title: "Materiais a confirmar com as cooperativas",
-       // items: [
-        //  "Sacolas de mercados, sacos de frutas, copinhos descartáveis, pratinhos de festa e garfinhos.",
-         // "Bandejas de frios e bandejas de carnes.",
-         // "Sacos de ração, sacos de areia de gatos e embalagens de sachês.",
-       // ],
-     // },
+      {
+        title: "PVC",
+        paragraphs: [
+         "Materiais de PVC, como canos e forros também podem ser reciclados. Confirmar com as cooperativas.",
+       ],
+        image: "/educacao/plastico/plastico3.png",
+     },
+      {
+        title: "Materiais a confirmar com as cooperativas",
+        items: [
+         "Sacolas de mercados, sacos de frutas, copinhos descartáveis, pratinhos de festa e garfinhos.",
+          "Bandejas de frios e bandejas de carnes.",
+          "Sacos de ração, sacos de areia de gatos e embalagens de sachês.",
+        ],
+      },
     ],
   },
 
@@ -139,7 +139,7 @@ const CONTENTS: Record<
         paragraphs: [
           "Não possuem ferro ou têm ferro em menor quantidade.",
         ],
-        image: "/educacao/metal/metal2.jpg",
+       
       },
       {
         title: "Alguns itens metálicos ou mistos não vão para a reciclagem",
@@ -149,7 +149,7 @@ const CONTENTS: Record<
           "Latas de aerossol, tinta, inseticida ou solventes.",
           "Pilhas e baterias (exigem pontos de coletas especiais).",
         ],
-        image: "/educacao/metal/metal3.jpg",
+       
       },
     ],
   },
@@ -198,21 +198,22 @@ const CONTENTS: Record<
           "O óleo de cozinha usado deve receber uma destinação adequada.",
           "Não despeje óleo usado diretamente na pia, no vaso sanitário ou no solo.",
         ],
-     // },
-     // {
-       //   title: "Como armazenar",
-        //items: [
-          //"Espere o óleo esfriar após o uso.",
-          //"Coloque o óleo usado em uma garrafa PET limpa e seca.",
-          //"Feche bem a garrafa.",
-          //"Leve a um ponto de coleta adequado.",
-        //],
-      //},
-    //  {
-        //title: "Por que não jogar no ralo?",
-       // paragraphs: [
-         // "O descarte incorreto do óleo pode causar problemas na tubulação e contribuir para a contaminação da água.",
-       // ],
+      },
+     {
+        title: "Como armazenar",
+        items: [
+          "Espere o óleo esfriar após o uso.",
+          "Coloque o óleo usado em uma garrafa PET limpa e seca.",
+          "Feche bem a garrafa.",
+          "Leve a um ponto de coleta adequado.",
+        ],
+        image: "/educacao/oleo/oleo1.jpg",
+      },
+      {
+        title: "Por que não jogar no ralo?",
+        paragraphs: [
+          "O descarte incorreto do óleo pode causar problemas na tubulação e contribuir para a contaminação da água.",
+        ],
       },
     ],
   },
